@@ -1,0 +1,5 @@
+vendor
+node_modules
+web/assets
+runtime
+web/libs

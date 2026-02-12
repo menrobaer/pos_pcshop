@@ -1,0 +1,8 @@
+{
+  "name": "pos_vlc",
+  "private": true,
+  "devDependencies": {
+    "prettier": "^3.0.0",
+    "@prettier/plugin-php": "^0.22.2"
+  }
+}
