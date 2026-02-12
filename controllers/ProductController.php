@@ -1,0 +1,260 @@
+<?php
+
+namespace app\controllers;
+
+use app\models\Product;
+use app\models\ProductBrand;
+use app\models\ProductCategory;
+use app\models\ProductSearch;
+use Exception;
+use Yii;
+use yii\web\Controller;
+use yii\web\NotFoundHttpException;
+use yii\filters\VerbFilter;
+use yii\helpers\ArrayHelper;
+use yii\web\UploadedFile;
+
+/**
+ * ProductController implements the CRUD actions for Product model.
+ */
+class ProductController extends Controller
+{
+  /**
+   * @inheritDoc
+   */
+  public function behaviors()
+  {
+    return array_merge(parent::behaviors(), [
+      'verbs' => [
+        'class' => VerbFilter::class,
+        'actions' => [
+          'delete' => ['POST'],
+        ],
+      ],
+    ]);
+  }
+
+  protected function getCategories()
+  {
+    return ArrayHelper::map(
+      ProductCategory::find()
+        ->orderBy(['name' => SORT_ASC])
+        ->all(),
+      'id',
+      'name',
+    );
+  }
+
+  protected function getBrands()
+  {
+    return ArrayHelper::map(
+      ProductBrand::find()
+        ->orderBy(['name' => SORT_ASC])
+        ->all(),
+      'id',
+      'name',
+    );
+  }
+
+  /**
+   * Lists all Product models.
+   *
+   * @return string
+   */
+  public function actionIndex()
+  {
+    $searchModel = new ProductSearch();
+    if (empty($this->request->queryParams)) {
+      $searchModel->status = 1;
+    }
+    $dataProvider = $searchModel->search($this->request->queryParams);
+
+    return $this->render('index', [
+      'searchModel' => $searchModel,
+      'dataProvider' => $dataProvider,
+      'categories' => $this->getCategories(),
+      'brands' => $this->getBrands(),
+    ]);
+  }
+
+  /**
+   * Displays a single Product model.
+   * @param int $id ID
+   * @return string
+   * @throws NotFoundHttpException if the model cannot be found
+   */
+  public function actionView($id)
+  {
+    return $this->render('view', [
+      'model' => $this->findModel($id),
+    ]);
+  }
+
+  /**
+   * Creates a new Product model.
+   * If creation is successful, the browser will be redirected to the 'view' page.
+   * @return string|\yii\web\Response
+   */
+  public function actionCreate()
+  {
+    $model = new Product();
+
+    if ($model->load(Yii::$app->request->post())) {
+      $transaction_exception = Yii::$app->db->beginTransaction();
+      try {
+        $model->imageFile = UploadedFile::getInstance($model, 'imageFile');
+        if ($model->imageFile) {
+          if ($path = $model->uploadImage()) {
+            $model->image = $path;
+          }
+        }
+        $model->imageFile = null;
+        if (!$model->save(false)) {
+          throw new Exception(
+            'Failed to Save #1! Code: ' . json_encode($model->getFirstErrors()),
+          );
+        }
+
+        $transaction_exception->commit();
+        try {
+          Yii::$app->utils::insertActivityLog([
+            'params' => array_merge(Yii::$app->request->post(), [
+              'id' => $model->id,
+            ]),
+          ]);
+        } catch (\Throwable $e) {
+          // do not block request on logging failure
+        }
+        Yii::$app->session->setFlash('success', 'Item Saved Successfully');
+        return $this->redirect(Yii::$app->request->referrer);
+      } catch (Exception $ex) {
+        Yii::$app->session->setFlash('warning', $ex->getMessage());
+        $transaction_exception->rollBack();
+        exit();
+        return $this->redirect(Yii::$app->request->referrer);
+      }
+    }
+
+    return $this->renderAjax('_form', [
+      'model' => $model,
+      'categories' => $this->getCategories(),
+      'brands' => $this->getBrands(),
+    ]);
+  }
+
+  /**
+   * Updates an existing Product model.
+   * If update is successful, the browser will be redirected to the 'view' page.
+   * @param int $id ID
+   * @return string|\yii\web\Response
+   * @throws NotFoundHttpException if the model cannot be found
+   */
+  public function actionUpdate($id)
+  {
+    $model = $this->findModel($id);
+
+    if ($model->load(Yii::$app->request->post())) {
+      $transaction_exception = Yii::$app->db->beginTransaction();
+      try {
+        $oldImage = $model->image;
+        if ($oldImage && file_exists($oldImage)) {
+          unlink($oldImage);
+        }
+
+        $model->imageFile = UploadedFile::getInstance($model, 'imageFile');
+        if ($model->imageFile) {
+          if ($path = $model->uploadImage()) {
+            $model->image = $path;
+          }
+        }
+        $model->imageFile = null;
+        if (!$model->save()) {
+          throw new Exception('Failed to Save! Code #001');
+        }
+
+        $transaction_exception->commit();
+        try {
+          Yii::$app->utils::insertActivityLog([
+            'params' => array_merge(Yii::$app->request->post(), [
+              'id' => $model->id,
+            ]),
+          ]);
+        } catch (\Throwable $e) {
+          // do not block request on logging failure
+        }
+        Yii::$app->session->setFlash('success', 'Item Saved Successfully');
+        return $this->redirect(Yii::$app->request->referrer);
+      } catch (Exception $ex) {
+        Yii::$app->session->setFlash('warning', $ex->getMessage());
+        $transaction_exception->rollBack();
+        return $this->redirect(Yii::$app->request->referrer);
+      }
+    }
+
+    return $this->renderAjax('_form', [
+      'model' => $model,
+      'categories' => $this->getCategories(),
+      'brands' => $this->getBrands(),
+    ]);
+  }
+
+  /**
+   * Deletes an existing Product model.
+   * If deletion is successful, the browser will be redirected to the 'index' page.
+   * @param int $id ID
+   * @return \yii\web\Response
+   * @throws NotFoundHttpException if the model cannot be found
+   */
+  public function actionDelete($id)
+  {
+    $model = $this->findModel($id);
+
+    // Check if product has inventory records
+    if ($model->getInventories()->count() > 0) {
+      if (Yii::$app->request->isAjax) {
+        return $this->asJson([
+          'success' => false,
+          'message' =>
+            'Cannot delete product: It has been used in transactions and has inventory records.',
+        ]);
+      }
+
+      Yii::$app->session->setFlash(
+        'error',
+        'Cannot delete product: It has been used in transactions and has inventory records.',
+      );
+      return $this->redirect(['view', 'id' => $model->id]);
+    }
+
+    try {
+      Yii::$app->utils::insertActivityLog([
+        'params' => array_merge(Yii::$app->request->post(), [
+          'id' => $model->id,
+        ]),
+      ]);
+    } catch (\Throwable $e) {
+      // do not block request on logging failure
+    }
+
+    $model->delete();
+
+    if (Yii::$app->request->isAjax) {
+      return $this->asJson([
+        'success' => true,
+        'message' => 'Product deleted successfully.',
+      ]);
+    }
+
+    Yii::$app->session->setFlash('success', 'Product Deleted Successfully');
+    return $this->redirect(['index']);
+  }
+
+  protected function findModel($id)
+  {
+    if (($model = Product::findOne(['id' => $id])) !== null) {
+      return $model;
+    }
+
+    throw new NotFoundHttpException('The requested page does not exist.');
+  }
+}
