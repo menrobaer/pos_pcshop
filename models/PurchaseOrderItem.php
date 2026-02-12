@@ -73,4 +73,12 @@ class PurchaseOrderItem extends \yii\db\ActiveRecord
       'price' => 'Price',
     ];
   }
+
+  /**
+   * Get the product associated with this purchase order item
+   */
+  public function getProduct()
+  {
+    return $this->hasOne(Product::class, ['id' => 'product_id']);
+  }
 }

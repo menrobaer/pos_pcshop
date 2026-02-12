@@ -196,6 +196,7 @@ $utils = Yii::$app->utils;
                   <thead>
                     <tr class="table-active">
                       <th scope="col" style="width: 50px;">#</th>
+                      <th scope="col" style="width: 90px;">Image</th>
                       <th scope="col" class="text-start" style="min-width: 280px;">Product Details</th>
                       <th scope="col" style="min-width: 120px;">Serial</th>
                       <th scope="col" style="min-width: 80px;">Price</th>
@@ -212,6 +213,19 @@ $utils = Yii::$app->utils;
                         '0',
                         STR_PAD_LEFT,
                       ) ?></th>
+                      <td class="text-center">
+                        <?php
+                        $product = $item->product;
+                        if ($product && $product->image): ?>
+                          <?= Html::img($product->getImagePath(), [
+                            'style' => 'max-width: 80px; max-height: 80px; object-fit: contain;',
+                            'alt' => $item->product_name,
+                            'class' => 'img-thumbnail',
+                          ]) ?>
+                        <?php else: ?>
+                          <span class="text-muted small">No Image</span>
+                        <?php endif; ?>
+                      </td>
                       <td class="text-start">
                         <span class="fw-bold"><?= Html::encode(
                           $item->product_name,
