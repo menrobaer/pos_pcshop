@@ -72,6 +72,8 @@ class UserSearch extends User
       return $dataProvider;
     }
 
+    $query->andWhere(['!=', 'id', 1]);
+
     // grid filtering conditions
     $query->andFilterWhere([
       'id' => $this->id,
