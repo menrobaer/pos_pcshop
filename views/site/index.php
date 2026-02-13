@@ -23,127 +23,137 @@ $user = Yii::$app->user->identity;
 
 // Dynamic statistics from database
 $stats = [
-  'total_revenue' => $totalRevenue,
-  'total_invoices' => $totalInvoices,
-  'total_po_amount' => $totalPOAmount,
-  'total_pos' => $totalPOs,
-  'total_customers' => $totalCustomers,
-  'total_products' => $totalProducts,
-  'total_stock' => $totalStock,
+    'total_revenue' => $totalRevenue,
+    'total_invoices' => $totalInvoices,
+    'total_po_amount' => $totalPOAmount,
+    'total_pos' => $totalPOs,
+    'total_customers' => $totalCustomers,
+    'total_products' => $totalProducts,
+    'total_stock' => $totalStock,
 ];
 
 $recentOrders = [];
 foreach ($recentInvoices as $invoice) {
-  $recentOrders[] = [
-    'id' => $invoice->id,
-    'code' => $invoice->code,
-    'customer' => $invoice->customer ? $invoice->customer->name : 'N/A',
-    'amount' => $invoice->grand_total,
-    'status' => $invoice->getStatusLabel(),
-    'date' => $invoice->date,
-  ];
+    $recentOrders[] = [
+        'id' => $invoice->id,
+        'code' => $invoice->code,
+        'customer' => $invoice->customer ? $invoice->customer->name : 'N/A',
+        'amount' => $invoice->grand_total,
+        'status' => $invoice->getStatusLabel(),
+        'date' => $invoice->date,
+    ];
 }
 
 $topSellers = [];
 foreach ($topProducts as $product) {
-  $topSellers[] = [
-    'id' => $product->id,
-    'name' => $product->name,
-    'category' => $product->category ? $product->category->name : 'N/A',
-    'stock' => $product->available,
-    'price' => $product->price,
-  ];
+    $topSellers[] = [
+        'id' => $product->id,
+        'name' => $product->name,
+        'category' => $product->category ? $product->category->name : 'N/A',
+        'stock' => $product->available,
+        'price' => $product->price,
+    ];
 }
 
 $formatActivityReference = function ($activity) {
-  $params = $activity->params ? json_decode($activity->params, true) : [];
-  if (!is_array($params)) {
-    $params = [];
-  }
-  $flatten = [];
-  foreach ($params as $key => $value) {
-    if (is_array($value)) {
-      foreach ($value as $nestedKey => $nestedValue) {
-        if (!is_array($nestedValue) && $nestedValue !== null) {
-          $flatten[$nestedKey] = $nestedValue;
+    $params = $activity->params ? json_decode($activity->params, true) : [];
+    if (!is_array($params)) {
+        $params = [];
+    }
+    $flatten = [];
+    foreach ($params as $key => $value) {
+        if (is_array($value)) {
+            foreach ($value as $nestedKey => $nestedValue) {
+                if (!is_array($nestedValue) && $nestedValue !== null) {
+                    $flatten[$nestedKey] = $nestedValue;
+                }
+            }
+        } elseif ($value !== null) {
+            $flatten[$key] = $value;
         }
-      }
-    } elseif ($value !== null) {
-      $flatten[$key] = $value;
     }
-  }
-  $pieces = [];
+    $pieces = [];
 
-  // For payment actions, show invoice or PO code and amount
-  if (in_array($activity->action, ['payment', 'add-payment'])) {
-    if (!empty($flatten['invoice_code'])) {
-      $pieces[] = 'Invoice: ' . $flatten['invoice_code'];
-    } elseif (!empty($flatten['purchase_order_code'])) {
-      $pieces[] = 'PO: ' . $flatten['purchase_order_code'];
+    // For payment actions, show invoice or PO code and amount
+    if (in_array($activity->action, ['payment', 'add-payment'])) {
+        if (!empty($flatten['invoice_code'])) {
+            $pieces[] = 'Invoice: ' . $flatten['invoice_code'];
+        } elseif (!empty($flatten['purchase_order_code'])) {
+            $pieces[] = 'PO: ' . $flatten['purchase_order_code'];
+        }
+        if (!empty($flatten['amount'])) {
+            $pieces[] = 'Amount: $' . $flatten['amount'];
+        }
+    } else {
+        // Standard reference formatting for other actions
+        foreach (['file', 'code', 'name', 'title', 'serial'] as $key) {
+            if (!empty($flatten[$key])) {
+                $pieces[] = ucfirst($key) . ': ' . $flatten[$key];
+            }
+        }
     }
-    if (!empty($flatten['amount'])) {
-      $pieces[] = 'Amount: $' . $flatten['amount'];
-    }
-  } else {
-    // Standard reference formatting for other actions
-    foreach (['file', 'code', 'name', 'title', 'serial'] as $key) {
-      if (!empty($flatten[$key])) {
-        $pieces[] = ucfirst($key) . ': ' . $flatten[$key];
-      }
-    }
-  }
 
-  if (empty($pieces) && !empty($flatten['id'])) {
-    $pieces[] = 'ID: ' . $flatten['id'];
-  }
-  return $pieces ? implode(' | ', $pieces) : '-';
+    if (empty($pieces) && !empty($flatten['id'])) {
+        $pieces[] = 'ID: ' . $flatten['id'];
+    }
+    return $pieces ? implode(' | ', $pieces) : '-';
 };
 
 $activityViewUrl = function ($activity) {
-  $params = $activity->params ? json_decode($activity->params, true) : [];
-  if (!is_array($params)) {
-    $params = [];
-  }
-  $flatten = [];
-  foreach ($params as $key => $value) {
-    if (is_array($value)) {
-      foreach ($value as $nestedKey => $nestedValue) {
-        if (!is_array($nestedValue) && $nestedValue !== null) {
-          $flatten[$nestedKey] = $nestedValue;
+    $params = $activity->params ? json_decode($activity->params, true) : [];
+    if (!is_array($params)) {
+        $params = [];
+    }
+    $flatten = [];
+    foreach ($params as $key => $value) {
+        if (is_array($value)) {
+            foreach ($value as $nestedKey => $nestedValue) {
+                if (!is_array($nestedValue) && $nestedValue !== null) {
+                    $flatten[$nestedKey] = $nestedValue;
+                }
+            }
+        } elseif ($value !== null) {
+            $flatten[$key] = $value;
         }
-      }
-    } elseif ($value !== null) {
-      $flatten[$key] = $value;
     }
-  }
 
-  $id = null;
-  // For payment actions, look for invoice_id or purchase_order_id
-  if (in_array($activity->action, ['payment', 'add-payment'])) {
-    if (!empty($flatten['invoice_id'])) {
-      return Url::to(['invoice/view', 'id' => $flatten['invoice_id']]);
-    } elseif (!empty($flatten['purchase_order_id'])) {
-      return Url::to([
-        'purchase-order/view',
-        'id' => $flatten['purchase_order_id'],
-      ]);
+    $id = null;
+    // For payment actions, look for invoice_id or purchase_order_id
+    if (in_array($activity->action, ['payment', 'add-payment'])) {
+        if (!empty($flatten['invoice_id'])) {
+            return Url::to(['invoice/view', 'id' => $flatten['invoice_id']]);
+        } elseif (!empty($flatten['purchase_order_id'])) {
+            return Url::to([
+                'purchase-order/view',
+                'id' => $flatten['purchase_order_id'],
+            ]);
+        }
     }
-  }
 
-  // For other actions, use the standard ID lookup
-  if (isset($flatten['id'])) {
-    $id = $flatten['id'];
-  }
-  foreach ($params as $value) {
-    if (is_array($value) && isset($value['id'])) {
-      $id = $value['id'];
-      break;
+    // For other actions, use the standard ID lookup
+    if (isset($flatten['id'])) {
+        $id = $flatten['id'];
     }
-  }
-  if ($id && $activity->controller) {
-    return Url::to([$activity->controller . '/view', 'id' => $id]);
-  }
-  return null;
+    foreach ($params as $value) {
+        if (is_array($value) && isset($value['id'])) {
+            $id = $value['id'];
+            break;
+        }
+    }
+    if ($id && $activity->controller) {
+        if ($activity->controller === 'purchase-order') {
+            // If there's a product_id in items, link to product view instead
+            if (isset($params['PurchaseOrderItem']) && is_array($params['PurchaseOrderItem'])) {
+                foreach ($params['PurchaseOrderItem'] as $item) {
+                    if (!empty($item['product_id'])) {
+                        return Url::to(['product/view', 'id' => $item['product_id']]);
+                    }
+                }
+            }
+        }
+        return Url::to([$activity->controller . '/view', 'id' => $id]);
+    }
+    return null;
 };
 ?>
 <div class="row">
@@ -155,8 +165,8 @@ $activityViewUrl = function ($activity) {
                     <div class="d-flex align-items-lg-center flex-lg-row flex-column">
                         <div class="flex-grow-1">
                             <h4 class="fs-16 mb-1">Good Morning, <?= $user
-                              ? $user->first_name
-                              : 'Guest' ?>!</h4>
+                                                                        ? $user->first_name
+                                                                        : 'Guest' ?>!</h4>
                             <p class="text-muted mb-0">Here's what's happening with your store today.</p>
                         </div>
                         <div class="mt-3 mt-lg-0">
@@ -165,13 +175,13 @@ $activityViewUrl = function ($activity) {
                                     <div class="col-sm-auto">
                                         <div class="input-group">
                                             <input type="text" name="date_range" class="form-control border-0 dash-filter-picker shadow" data-provider="flatpickr" data-range-date="true" data-date-format="d M, Y" value="<?= Html::encode(
-                                              Yii::$app->request->get(
-                                                'date_range',
-                                                date('01 M, Y') .
-                                                  ' to ' .
-                                                  date('d M, Y'),
-                                              ),
-                                            ) ?>">
+                                                                                                                                                                                                                                Yii::$app->request->get(
+                                                                                                                                                                                                                                    'date_range',
+                                                                                                                                                                                                                                    date('01 M, Y') .
+                                                                                                                                                                                                                                        ' to ' .
+                                                                                                                                                                                                                                        date('d M, Y'),
+                                                                                                                                                                                                                                ),
+                                                                                                                                                                                                                            ) ?>">
                                             <button type="submit" class="input-group-text bg-primary border-primary text-white">
                                                 <i class="ri-equalizer-fill"></i>
                                             </button>
@@ -203,12 +213,10 @@ $activityViewUrl = function ($activity) {
                             </div>
                             <div class="d-flex align-items-end justify-content-between mt-4">
                                 <div>
-                                    <h4 class="fs-22 fw-semibold ff-secondary mb-4">$<span class="counter-value" data-target="<?= (float) $stats[
-                                      'total_revenue'
-                                    ] ?>">0</span></h4>
+                                    <h4 class="fs-22 fw-semibold ff-secondary mb-4">$<span class="counter-value" data-target="<?= (float) $stats['total_revenue'] ?>">0</span></h4>
                                     <a href="<?= Url::to([
-                                      'invoice/index',
-                                    ]) ?>" class="text-decoration-underline">View invoices</a>
+                                                    'invoice/index',
+                                                ]) ?>" class="text-decoration-underline">View invoices</a>
                                 </div>
                                 <div class="avatar-sm flex-shrink-0">
                                     <span class="avatar-title bg-success-subtle rounded fs-3">
@@ -236,12 +244,10 @@ $activityViewUrl = function ($activity) {
                             </div>
                             <div class="d-flex align-items-end justify-content-between mt-4">
                                 <div>
-                                    <h4 class="fs-22 fw-semibold ff-secondary mb-4"><span class="counter-value" data-target="<?= $stats[
-                                      'total_invoices'
-                                    ] ?>">0</span></h4>
+                                    <h4 class="fs-22 fw-semibold ff-secondary mb-4"><span class="counter-value" data-target="<?= $stats['total_invoices'] ?>">0</span></h4>
                                     <a href="<?= Url::to([
-                                      'invoice/index',
-                                    ]) ?>" class="text-decoration-underline">View all invoices</a>
+                                                    'invoice/index',
+                                                ]) ?>" class="text-decoration-underline">View all invoices</a>
                                 </div>
                                 <div class="avatar-sm flex-shrink-0">
                                     <span class="avatar-title bg-info-subtle rounded fs-3">
@@ -269,12 +275,10 @@ $activityViewUrl = function ($activity) {
                             </div>
                             <div class="d-flex align-items-end justify-content-between mt-4">
                                 <div>
-                                    <h4 class="fs-22 fw-semibold ff-secondary mb-4"><span class="counter-value" data-target="<?= $stats[
-                                      'total_customers'
-                                    ] ?>">0</span></h4>
+                                    <h4 class="fs-22 fw-semibold ff-secondary mb-4"><span class="counter-value" data-target="<?= $stats['total_customers'] ?>">0</span></h4>
                                     <a href="<?= Url::to([
-                                      'customer/index',
-                                    ]) ?>" class="text-decoration-underline">See details</a>
+                                                    'customer/index',
+                                                ]) ?>" class="text-decoration-underline">See details</a>
                                 </div>
                                 <div class="avatar-sm flex-shrink-0">
                                     <span class="avatar-title bg-warning-subtle rounded fs-3">
@@ -302,12 +306,10 @@ $activityViewUrl = function ($activity) {
                             </div>
                             <div class="d-flex align-items-end justify-content-between mt-4">
                                 <div>
-                                    <h4 class="fs-22 fw-semibold ff-secondary mb-4"><span class="counter-value" data-target="<?= $stats[
-                                      'total_stock'
-                                    ] ?>">0</span></h4>
+                                    <h4 class="fs-22 fw-semibold ff-secondary mb-4"><span class="counter-value" data-target="<?= $stats['total_stock'] ?>">0</span></h4>
                                     <a href="<?= Url::to([
-                                      'product/index',
-                                    ]) ?>" class="text-decoration-underline">View products</a>
+                                                    'product/index',
+                                                ]) ?>" class="text-decoration-underline">View products</a>
                                 </div>
                                 <div class="avatar-sm flex-shrink-0">
                                     <span class="avatar-title bg-primary-subtle rounded fs-3">
@@ -347,33 +349,29 @@ $activityViewUrl = function ($activity) {
                                             </tr>
                                         <?php else: ?>
                                             <?php foreach (
-                                              $bestSellers
-                                              as $seller
+                                                $bestSellers
+                                                as $seller
                                             ): ?>
                                                 <tr>
                                                     <td>
                                                         <h5 class="fs-14 my-1">
                                                             <a href="<?= Url::to(
-                                                              [
-                                                                'product/view',
-                                                                'id' =>
-                                                                  $seller[
-                                                                    'product_id'
-                                                                  ],
-                                                              ],
-                                                            ) ?>" class="text-reset">
+                                                                            [
+                                                                                'product/view',
+                                                                                'id' =>
+                                                                                $seller['product_id'],
+                                                                            ],
+                                                                        ) ?>" class="text-reset">
                                                                 <?= Html::encode(
-                                                                  $seller[
-                                                                    'product_name'
-                                                                  ],
+                                                                    $seller['product_name'],
                                                                 ) ?>
                                                             </a>
                                                         </h5>
                                                     </td>
                                                     <td class="text-end">
                                                         <span class="badge bg-primary-subtle text-primary fs-12"><?= number_format(
-                                                          $seller['qty'],
-                                                        ) ?></span>
+                                                                                                                        $seller['qty'],
+                                                                                                                    ) ?></span>
                                                     </td>
                                                 </tr>
                                             <?php endforeach; ?>
@@ -390,8 +388,8 @@ $activityViewUrl = function ($activity) {
                         <div class="card-header align-items-center d-flex">
                             <h4 class="card-title mb-0 flex-grow-1">Top Products (By Stock)</h4>
                             <a href="<?= Url::to([
-                              'product/index',
-                            ]) ?>" class="text-decoration-underline">View all</a>
+                                            'product/index',
+                                        ]) ?>" class="text-decoration-underline">View all</a>
                         </div><!-- end card header -->
 
                         <div class="card-body">
@@ -404,8 +402,8 @@ $activityViewUrl = function ($activity) {
                                             </tr>
                                         <?php else: ?>
                                             <?php foreach (
-                                              $topSellers
-                                              as $product
+                                                $topSellers
+                                                as $product
                                             ): ?>
                                                 <tr>
                                                     <td>
@@ -413,41 +411,35 @@ $activityViewUrl = function ($activity) {
                                                             <div>
                                                                 <h5 class="fs-14 my-1">
                                                                     <a href="<?= Url::to(
-                                                                      [
-                                                                        'product/view',
-                                                                        'id' =>
-                                                                          $product[
-                                                                            'id'
-                                                                          ],
-                                                                      ],
-                                                                    ) ?>" class="text-reset">
+                                                                                    [
+                                                                                        'product/view',
+                                                                                        'id' =>
+                                                                                        $product['id'],
+                                                                                    ],
+                                                                                ) ?>" class="text-reset">
                                                                         <?= Html::encode(
-                                                                          $product[
-                                                                            'name'
-                                                                          ],
+                                                                            $product['name'],
                                                                         ) ?>
                                                                     </a>
                                                                 </h5>
                                                                 <span class="text-muted"><?= Html::encode(
-                                                                  $product[
-                                                                    'category'
-                                                                  ],
-                                                                ) ?></span>
+                                                                                                $product['category'],
+                                                                                            ) ?></span>
                                                             </div>
                                                         </div>
                                                     </td>
                                                     <td>
                                                         <div class="text-muted text-end">Stock</div>
                                                         <h5 class="fs-14 my-1 fw-normal text-end"><?= number_format(
-                                                          $product['stock'],
-                                                        ) ?></h5>
+                                                                                                        $product['stock'],
+                                                                                                    ) ?></h5>
                                                     </td>
                                                     <td>
                                                         <div class="text-muted text-end">Price</div>
                                                         <h5 class="fs-14 my-1 fw-normal text-end">$<?= number_format(
-                                                          $product['price'],
-                                                          2,
-                                                        ) ?></h5>
+                                                                                                        $product['price'],
+                                                                                                        2,
+                                                                                                    ) ?></h5>
                                                     </td>
                                                 </tr>
                                             <?php endforeach; ?>
@@ -466,8 +458,8 @@ $activityViewUrl = function ($activity) {
                         <div class="card-header align-items-center d-flex">
                             <h4 class="card-title mb-0 flex-grow-1">Recent Invoices</h4>
                             <a href="<?= Url::to([
-                              'invoice/index',
-                            ]) ?>" class="text-decoration-underline">View all</a>
+                                            'invoice/index',
+                                        ]) ?>" class="text-decoration-underline">View all</a>
                         </div><!-- end card header -->
 
                         <div class="card-body">
@@ -489,55 +481,53 @@ $activityViewUrl = function ($activity) {
                                             </tr>
                                         <?php else: ?>
                                             <?php foreach (
-                                              $recentOrders
-                                              as $order
+                                                $recentOrders
+                                                as $order
                                             ): ?>
                                                 <tr>
                                                     <td>
                                                         <a href="<?= Url::to([
-                                                          'invoice/view',
-                                                          'id' => $order['id'],
-                                                        ]) ?>" class="fw-medium link-primary">
+                                                                        'invoice/view',
+                                                                        'id' => $order['id'],
+                                                                    ]) ?>" class="fw-medium link-primary">
                                                             <?= Html::encode(
-                                                              $order['code'],
+                                                                $order['code'],
                                                             ) ?>
                                                         </a>
                                                     </td>
                                                     <td>
                                                         <div class="d-flex align-items-center">
                                                             <div class="flex-grow-1"><?= Html::encode(
-                                                              $order[
-                                                                'customer'
-                                                              ],
-                                                            ) ?></div>
+                                                                                            $order['customer'],
+                                                                                        ) ?></div>
                                                         </div>
                                                     </td>
                                                     <td>
                                                         <span class="text-success">$<?= number_format(
-                                                          $order['amount'],
-                                                          2,
-                                                        ) ?></span>
+                                                                                        $order['amount'],
+                                                                                        2,
+                                                                                    ) ?></span>
                                                     </td>
                                                     <td>
                                                         <span class="badge <?= strpos(
-                                                          $order['status'],
-                                                          'Paid',
-                                                        ) !== false
-                                                          ? 'bg-success-subtle text-success'
-                                                          : (strpos(
-                                                            $order['status'],
-                                                            'Pending',
-                                                          ) !== false
-                                                            ? 'bg-warning-subtle text-warning'
-                                                            : 'bg-danger-subtle text-danger') ?>">
+                                                                                $order['status'],
+                                                                                'Paid',
+                                                                            ) !== false
+                                                                                ? 'bg-success-subtle text-success'
+                                                                                : (strpos(
+                                                                                    $order['status'],
+                                                                                    'Pending',
+                                                                                ) !== false
+                                                                                    ? 'bg-warning-subtle text-warning'
+                                                                                    : 'bg-danger-subtle text-danger') ?>">
                                                             <?= Html::encode(
-                                                              $order['status'],
+                                                                $order['status'],
                                                             ) ?>
                                                         </span>
                                                     </td>
                                                     <td><?= \app\components\Utils::date(
-                                                      $order['date'],
-                                                    ) ?></td>
+                                                            $order['date'],
+                                                        ) ?></td>
                                                 </tr>
                                             <?php endforeach; ?>
                                         <?php endif; ?>
@@ -552,8 +542,8 @@ $activityViewUrl = function ($activity) {
                         <div class="card-header align-items-center d-flex">
                             <h4 class="card-title mb-0 flex-grow-1">Recent Purchase Orders</h4>
                             <a href="<?= Url::to([
-                              'purchase-order/index',
-                            ]) ?>" class="text-decoration-underline">View all</a>
+                                            'purchase-order/index',
+                                        ]) ?>" class="text-decoration-underline">View all</a>
                         </div><!-- end card header -->
 
                         <div class="card-body">
@@ -575,56 +565,56 @@ $activityViewUrl = function ($activity) {
                                             </tr>
                                         <?php else: ?>
                                             <?php foreach (
-                                              $recentPOs
-                                              as $po
+                                                $recentPOs
+                                                as $po
                                             ): ?>
                                                 <tr>
                                                     <td>
                                                         <a href="<?= Url::to([
-                                                          'purchase-order/view',
-                                                          'id' => $po->id,
-                                                        ]) ?>" class="fw-medium link-primary">
+                                                                        'purchase-order/view',
+                                                                        'id' => $po->id,
+                                                                    ]) ?>" class="fw-medium link-primary">
                                                             <?= Html::encode(
-                                                              $po->code,
+                                                                $po->code,
                                                             ) ?>
                                                         </a>
                                                     </td>
                                                     <td>
                                                         <div class="d-flex align-items-center">
                                                             <div class="flex-grow-1"><?= Html::encode(
-                                                              $po->supplier
-                                                                ? $po->supplier
-                                                                  ->name
-                                                                : 'N/A',
-                                                            ) ?></div>
+                                                                                            $po->supplier
+                                                                                                ? $po->supplier
+                                                                                                ->name
+                                                                                                : 'N/A',
+                                                                                        ) ?></div>
                                                         </div>
                                                     </td>
                                                     <td>
                                                         <span class="text-success">$<?= number_format(
-                                                          $po->grand_total,
-                                                          2,
-                                                        ) ?></span>
+                                                                                        $po->grand_total,
+                                                                                        2,
+                                                                                    ) ?></span>
                                                     </td>
                                                     <td>
                                                         <span class="badge <?= strpos(
-                                                          $po->getStatusLabel(),
-                                                          'Paid',
-                                                        ) !== false
-                                                          ? 'bg-success-subtle text-success'
-                                                          : (strpos(
-                                                            $po->getStatusLabel(),
-                                                            'Pending',
-                                                          ) !== false
-                                                            ? 'bg-warning-subtle text-warning'
-                                                            : 'bg-danger-subtle text-danger') ?>">
+                                                                                $po->getStatusLabel(),
+                                                                                'Paid',
+                                                                            ) !== false
+                                                                                ? 'bg-success-subtle text-success'
+                                                                                : (strpos(
+                                                                                    $po->getStatusLabel(),
+                                                                                    'Pending',
+                                                                                ) !== false
+                                                                                    ? 'bg-warning-subtle text-warning'
+                                                                                    : 'bg-danger-subtle text-danger') ?>">
                                                             <?= Html::encode(
-                                                              $po->getStatusLabel(),
+                                                                $po->getStatusLabel(),
                                                             ) ?>
                                                         </span>
                                                     </td>
                                                     <td><?= \app\components\Utils::date(
-                                                      $po->date,
-                                                    ) ?></td>
+                                                            $po->date,
+                                                        ) ?></td>
                                                 </tr>
                                             <?php endforeach; ?>
                                         <?php endif; ?>
@@ -663,76 +653,76 @@ $activityViewUrl = function ($activity) {
                                             </tr>
                                         <?php else: ?>
                                             <?php foreach (
-                                              $recentActivities
-                                              as $activity
+                                                $recentActivities
+                                                as $activity
                                             ): ?>
                                                 <tr>
                                                     <td>
                                                         <div class="d-flex align-items-center">
                                                             <div class="flex-grow-1">
                                                                 <?= $activity->user
-                                                                  ? Html::encode(
-                                                                    $activity
-                                                                      ->user
-                                                                      ->first_name .
-                                                                      ' ' .
-                                                                      $activity
-                                                                        ->user
-                                                                        ->last_name,
-                                                                  )
-                                                                  : '<span class="text-muted">System/Guest</span>' ?>
+                                                                    ? Html::encode(
+                                                                        $activity
+                                                                            ->user
+                                                                            ->first_name .
+                                                                            ' ' .
+                                                                            $activity
+                                                                            ->user
+                                                                            ->last_name,
+                                                                    )
+                                                                    : '<span class="text-muted">System/Guest</span>' ?>
                                                             </div>
                                                         </div>
                                                     </td>
                                                     <td>
                                                         <span class="text-primary"><?= Html::encode(
-                                                          ucfirst(
-                                                            $activity->controller,
-                                                          ),
-                                                        ) ?></span> / 
+                                                                                        ucfirst(
+                                                                                            $activity->controller,
+                                                                                        ),
+                                                                                    ) ?></span> /
                                                         <span class="text-muted"><?= Html::encode(
-                                                          $activity->action,
-                                                        ) ?></span>
+                                                                                        $activity->action,
+                                                                                    ) ?></span>
                                                     </td>
                                                     <td>
                                                         <span class="badge bg-info-subtle text-info"><?= Html::encode(
-                                                          $activity->method,
-                                                        ) ?></span>
+                                                                                                            $activity->method,
+                                                                                                        ) ?></span>
                                                     </td>
                                                     <?php
                                                     $reference = $formatActivityReference(
-                                                      $activity,
+                                                        $activity,
                                                     );
                                                     $viewUrl = $activityViewUrl(
-                                                      $activity,
+                                                        $activity,
                                                     );
                                                     ?>
                                                     <td>
                                                         <?php if (
-                                                          $viewUrl !== null
+                                                            $viewUrl !== null
                                                         ): ?>
                                                             <?= Html::a(
-                                                              Html::encode(
-                                                                $reference,
-                                                              ),
-                                                              $viewUrl,
-                                                              [
-                                                                'class' =>
-                                                                  'text-decoration-underline',
-                                                              ],
+                                                                Html::encode(
+                                                                    $reference,
+                                                                ),
+                                                                $viewUrl,
+                                                                [
+                                                                    'class' =>
+                                                                    'text-decoration-underline',
+                                                                ],
                                                             ) ?>
                                                         <?php else: ?>
                                                             <?= Html::encode(
-                                                              $reference,
+                                                                $reference,
                                                             ) ?>
                                                         <?php endif; ?>
                                                     </td>
                                                     <td><?= Html::encode(
-                                                      $activity->ip_address,
-                                                    ) ?></td>
+                                                            $activity->ip_address,
+                                                        ) ?></td>
                                                     <td><?= Yii::$app->utils->dateTime(
-                                                      $activity->created_at,
-                                                    ) ?></td>
+                                                            $activity->created_at,
+                                                        ) ?></td>
                                                 </tr>
                                             <?php endforeach; ?>
                                         <?php endif; ?>

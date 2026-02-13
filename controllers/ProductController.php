@@ -7,6 +7,7 @@ use app\models\ProductBrand;
 use app\models\ProductCategory;
 use app\models\ProductModel;
 use app\models\ProductSearch;
+use app\models\ProductVariation;
 use Exception;
 use Yii;
 use yii\web\Controller;
@@ -30,6 +31,7 @@ class ProductController extends Controller
         'class' => VerbFilter::class,
         'actions' => [
           'delete' => ['POST'],
+          'delete-variation' => ['POST'],
         ],
       ],
     ]);
@@ -57,7 +59,7 @@ class ProductController extends Controller
     );
   }
 
-    protected function getModels()
+  protected function getModels()
   {
     return ArrayHelper::map(
       ProductModel::find()
@@ -97,8 +99,30 @@ class ProductController extends Controller
    */
   public function actionView($id)
   {
+    $modelPO = new \app\models\PurchaseOrder();
+    $modelPO->date = date('Y-m-d');
+
+    // Generate PO Code
+    $last = \app\models\PurchaseOrder::find()
+      ->orderBy(['id' => SORT_DESC])
+      ->one();
+    $num = $last ? (int) substr($last->code, 3) + 1 : 1;
+    $modelPO->code = 'PO-' . str_pad($num, 5, '0', STR_PAD_LEFT);
+
+    // Generate Serial Code
+    $modelPO->serial_code = date('Ymd') . '-' . strtoupper(Yii::$app->security->generateRandomString(4));
+
+    $suppliers = ArrayHelper::map(
+      \app\models\Supplier::find()
+        ->orderBy(['name' => SORT_ASC])
+        ->all(),
+      'id',
+      'name',
+    );
     return $this->render('view', [
       'model' => $this->findModel($id),
+      'modelPO' => $modelPO,
+      'suppliers' => $suppliers,
     ]);
   }
 
@@ -138,7 +162,7 @@ class ProductController extends Controller
           // do not block request on logging failure
         }
         Yii::$app->session->setFlash('success', 'Item Saved Successfully');
-        return $this->redirect(Yii::$app->request->referrer);
+        return $this->redirect(['view', 'id' => $model->id]);
       } catch (Exception $ex) {
         Yii::$app->session->setFlash('warning', $ex->getMessage());
         $transaction_exception->rollBack();
@@ -197,7 +221,7 @@ class ProductController extends Controller
           // do not block request on logging failure
         }
         Yii::$app->session->setFlash('success', 'Item Saved Successfully');
-        return $this->redirect(Yii::$app->request->referrer);
+        return $this->redirect(['view', 'id' => $model->id]);
       } catch (Exception $ex) {
         Yii::$app->session->setFlash('warning', $ex->getMessage());
         $transaction_exception->rollBack();
@@ -230,7 +254,7 @@ class ProductController extends Controller
         return $this->asJson([
           'success' => false,
           'message' =>
-            'Cannot delete product: It has been used in transactions and has inventory records.',
+          'Cannot delete product: It has been used in transactions and has inventory records.',
         ]);
       }
 
@@ -262,6 +286,41 @@ class ProductController extends Controller
 
     Yii::$app->session->setFlash('success', 'Product Deleted Successfully');
     return $this->redirect(['index']);
+  }
+
+  /**
+   * Deletes a ProductVariation model.
+   * If deletion is successful, the browser will be redirected to the product 'view' page.
+   * @param int $id ID
+   * @return \yii\web\Response
+   * @throws NotFoundHttpException if the model cannot be found
+   */
+  public function actionDeleteVariation($id)
+  {
+    $variation = ProductVariation::findOne($id);
+    if (!$variation) {
+      throw new NotFoundHttpException('The requested variation does not exist.');
+    }
+
+    $productId = $variation->product_id;
+
+    try {
+      Yii::$app->utils::insertActivityLog([
+        'params' => [
+          'action' => 'delete_variation',
+          'id' => $id,
+          'product_id' => $productId,
+          'serial' => $variation->serial,
+        ],
+      ]);
+    } catch (\Throwable $e) {
+      // do not block request on logging failure
+    }
+
+    $variation->delete();
+
+    Yii::$app->session->setFlash('success', 'Variation deleted successfully.');
+    return $this->redirect(['view', 'id' => $productId]);
   }
 
   protected function findModel($id)

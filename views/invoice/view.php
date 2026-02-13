@@ -37,26 +37,7 @@ $utils = Yii::$app->utils;
               <div class="d-flex">
                 <div class="flex-grow-1">
                   <div class="mb-3">
-                    <?php if ($outlet && $outlet->image): ?>
-                      <?= Html::img($outlet->getImagePath(), [
-                        'style' => 'max-height: 100px;',
-                        'alt' => 'Logo',
-                        'class' => 'mb-2',
-                      ]) ?>
-                    <?php endif; ?>
                     <h3 class="fw-bold mb-0">វិក្កយបត្រ - Invoice</h3>
-                  </div>
-                  <div class="mt-sm-5 mt-4">
-                    <h6 class="text-muted text-uppercase fw-semibold">From Address</h6>
-                    <p class="text-muted mb-1 fw-bold"><?= $outlet
-                      ? Html::encode($outlet->name)
-                      : 'POS VLC Company' ?></p>
-                    <p class="text-muted mb-1"><?= $outlet
-                      ? nl2br(Html::encode($outlet->address))
-                      : '123 Business Avenue, Suite 456' ?></p>
-                    <p class="text-muted mb-0"><span>Phone:</span> <?= $outlet
-                      ? Html::encode($outlet->phone)
-                      : '+(01) 234 6789' ?></p>
                   </div>
                 </div>
                 <div class="flex-shrink-0 mt-sm-0 mt-3 text-end">
@@ -72,57 +53,44 @@ $utils = Yii::$app->utils;
                           'class' => 'btn btn-primary btn-sm',
                         ],
                       ) ?>
-                  <?php else: ?>
+                    <?php else: ?>
                       <?= Html::button(
                         '<i class="ri-edit-line align-bottom me-1"></i> Update',
                         [
                           'class' => 'btn btn-primary btn-sm disabled',
                           'title' =>
-                            'Invoice is not editable after cancel/paid.',
+                          'Invoice is not editable after cancel/paid.',
                         ],
                       ) ?>
-                  <?php endif; ?>
-                  <?= Html::a(
-                    '<i class="ri-delete-bin-line align-bottom me-1"></i> Delete',
-                    ['delete', 'id' => $model->id],
-                    [
-                      'class' => 'btn btn-danger btn-sm',
-                      'data' => [
-                        'confirm' =>
+                    <?php endif; ?>
+                    <?= Html::a(
+                      '<i class="ri-delete-bin-line align-bottom me-1"></i> Delete',
+                      ['delete', 'id' => $model->id],
+                      [
+                        'class' => 'btn btn-danger btn-sm',
+                        'data' => [
+                          'confirm' =>
                           'Are you sure you want to delete this item?',
-                        'method' => 'post',
+                          'method' => 'post',
+                        ],
                       ],
-                    ],
-                  ) ?>
+                    ) ?>
 
-                  <div class="btn-group">
+                    <div class="btn-group">
                       <button type="button" class="btn btn-secondary btn-sm dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
-                          Actions
+                        Actions
                       </button>
                       <ul class="dropdown-menu">
-                          <li>
-                              <a class="dropdown-item invoice-action" href="#" data-action-url="<?= Url::to(
-                                ['invoice/duplicate', 'id' => $model->id],
-                              ) ?>" data-action-title="Duplicate Invoice" data-action-text="This will create a new invoice draft with the same items. Continue?">Duplicate</a>
-                          </li>
-                          <li>
-                              <a class="dropdown-item invoice-action" href="#" data-action-url="<?= Url::to(
-                                ['invoice/cancel', 'id' => $model->id],
-                              ) ?>" data-action-title="Cancel Invoice" data-action-text="This will cancel the invoice and prevent further changes. Continue?">Cancel</a>
-                          </li>
+                        <li>
+                          <a class="dropdown-item invoice-action" href="#" data-action-url="<?= Url::to(
+                                                                                              ['invoice/cancel', 'id' => $model->id],
+                                                                                            ) ?>" data-action-title="Cancel Invoice" data-action-text="This will cancel the invoice and prevent further changes. Continue?">Cancel</a>
+                        </li>
                       </ul>
-                  </div>
+                    </div>
                     <a href="javascript:window.print()" class="btn btn-soft-info btn-sm"><i class="ri-printer-line align-bottom me-1"></i> Print</a>
                   </div>
-                  <h6><span class="text-muted fw-normal">Email:</span> <span><?= $outlet
-                    ? Html::encode($outlet->email)
-                    : 'support@posvlc.com' ?></span></h6>
-                  <h6><span class="text-muted fw-normal">Website:</span> <a href="<?= $outlet
-                    ? Html::encode($outlet->website)
-                    : '#' ?>" class="link-primary">
-                    <?= $outlet
-                      ? Html::encode($outlet->website)
-                      : 'www.posvlc.com' ?></a></h6>
+
                 </div>
               </div>
             </div>
@@ -133,29 +101,29 @@ $utils = Yii::$app->utils;
                 <div class="col-lg-3 col-6">
                   <p class="text-muted mb-2 text-uppercase fw-semibold">Invoice No</p>
                   <h5 class="fs-14 mb-0">#<span id="invoice-no"><?= Html::encode(
-                    $model->code,
-                  ) ?></span></h5>
+                                                                  $model->code,
+                                                                ) ?></span></h5>
                 </div>
                 <div class="col-lg-3 col-6">
                   <p class="text-muted mb-2 text-uppercase fw-semibold">Date</p>
                   <h5 class="fs-14 mb-0"><span id="invoice-date"><?= date(
-                    'd M, Y',
-                    strtotime($model->date),
-                  ) ?></span></h5>
+                                                                    'd M, Y',
+                                                                    strtotime($model->date),
+                                                                  ) ?></span></h5>
                 </div>
                 <div class="col-lg-3 col-6">
                   <p class="text-muted mb-2 text-uppercase fw-semibold">Due Date</p>
                   <h5 class="fs-14 mb-0 text-danger"><?= date(
-                    'd M, Y',
-                    strtotime($model->due_date),
-                  ) ?></h5>
+                                                        'd M, Y',
+                                                        strtotime($model->due_date),
+                                                      ) ?></h5>
                 </div>
                 <div class="col-lg-3 col-6">
                   <p class="text-muted mb-2 text-uppercase fw-semibold">Total Amount</p>
                   <h5 class="fs-14 mb-0">$<span id="total-amount"><?= number_format(
-                    $model->grand_total,
-                    2,
-                  ) ?></span></h5>
+                                                                    $model->grand_total,
+                                                                    2,
+                                                                  ) ?></span></h5>
                 </div>
               </div>
             </div>
@@ -166,25 +134,25 @@ $utils = Yii::$app->utils;
                 <div class="col-6">
                   <h6 class="text-muted text-uppercase fw-semibold mb-3">Customer Details</h6>
                   <p class="fw-bold mb-2 fs-15"><?= $model->customer
-                    ? Html::encode($model->customer->name)
-                    : '-' ?></p>
+                                                  ? Html::encode($model->customer->name)
+                                                  : '-' ?></p>
                   <p class="text-muted mb-1"><?= $model->customer
-                    ? Html::encode($model->customer->address)
-                    : '-' ?></p>
+                                                ? Html::encode($model->customer->address)
+                                                : '-' ?></p>
                   <p class="text-muted mb-0"><span>Phone: </span><?= $model->customer
-                    ? Html::encode($model->customer->phone)
-                    : '-' ?></p>
+                                                                    ? Html::encode($model->customer->phone)
+                                                                    : '-' ?></p>
                 </div>
                 <div class="col-6 text-end">
                   <h6 class="text-muted text-uppercase fw-semibold mb-3">Invoice Summary</h6>
                   <p class="mb-1"><span class="text-muted">Paid:</span> $<?= number_format(
-                    $model->paid_amount,
-                    2,
-                  ) ?></p>
+                                                                            $model->paid_amount,
+                                                                            2,
+                                                                          ) ?></p>
                   <p class="mb-0"><span class="text-muted">Balance:</span> $<?= number_format(
-                    $model->balance_amount,
-                    2,
-                  ) ?></p>
+                                                                              $model->balance_amount,
+                                                                              2,
+                                                                            ) ?></p>
                 </div>
               </div>
             </div>
@@ -206,64 +174,66 @@ $utils = Yii::$app->utils;
                   </thead>
                   <tbody>
                     <?php foreach ($model->items as $index => $item): ?>
-                    <tr>
-                      <th scope="row"><?= str_pad(
-                        $index + 1,
-                        2,
-                        '0',
-                        STR_PAD_LEFT,
-                      ) ?></th>
-                      <td class="text-center">
-                        <?php
-                        $product = $item->product;
-                        if ($product && $product->image): ?>
-                          <?= Html::img($product->getImagePath(), [
-                            'style' => 'max-width: 80px; max-height: 80px; object-fit: contain;',
-                            'alt' => $item->product_name,
-                            'class' => 'img-thumbnail',
-                          ]) ?>
-                        <?php else: ?>
-                          <span class="text-muted small">No Image</span>
-                        <?php endif; ?>
-                      </td>
-                      <td class="text-start">
-                        <span class="fw-bold"><?= Html::encode(
-                          $item->product_name,
-                        ) ?></span>
-                        <div class="d-flex align-items-center mt-2">
-                          <div class="flex-grow-1">
-                            <?php if ($item->sku): ?>
-                              <p class="text-muted mb-1"><span class="fw-medium">SKU:</span> <?= Html::encode(
-                                $item->sku,
-                              ) ?></p>
-                            <?php endif; ?>
-                            <?php if ($item->description): ?>
-                              <p class="text-muted mb-0"><?= nl2br(
-                                Html::encode($item->description),
-                              ) ?></p>
-                            <?php endif; ?>
+                      <tr>
+                        <th scope="row"><?= str_pad(
+                                          $index + 1,
+                                          2,
+                                          '0',
+                                          STR_PAD_LEFT,
+                                        ) ?></th>
+                        <td class="text-center">
+                          <?php
+                          $product = $item->product;
+                          if ($product && $product->image): ?>
+                            <?= Html::img($product->getImagePath(), [
+                              'style' => 'max-width: 80px; max-height: 80px; object-fit: contain;',
+                              'alt' => $item->product_name,
+                              'class' => 'img-thumbnail',
+                            ]) ?>
+                          <?php else: ?>
+                            <span class="text-muted small">No Image</span>
+                          <?php endif; ?>
+                        </td>
+                        <td class="text-start">
+                          <?= Html::a(
+                            Html::tag('span', Html::encode($item->product_name), ['class' => 'fw-bold']),
+                            ['product/view', 'id' => $item->product_id],
+                            ['class' => 'text-dark link-primary']
+                          ) ?>
+                          <div class="d-flex align-items-center mt-2">
+                            <div class="flex-grow-1">
+                              <?php if ($item->sku): ?>
+                                <p class="text-muted mb-1"><span class="fw-medium">SKU:</span> <?= Html::encode(
+                                                                                                  $item->sku,
+                                                                                                ) ?></p>
+                              <?php endif; ?>
+                              <?php if ($item->description): ?>
+                                <p class="text-muted mb-0"><?= nl2br(
+                                                              Html::encode($item->description),
+                                                            ) ?></p>
+                              <?php endif; ?>
+                            </div>
                           </div>
-                        </div>
-                      </td>
-                      <td><?= Html::encode($item->serial ?: '-') ?></td>
-                      <td>
-                        $<?= number_format($item->price, 2) ?>
-                        <?php if ($item->discount > 0): ?>
-                          <div class="text-danger small">
-                            - <?= $item->discount_type === 'percentage'
-                              ? number_format($item->discount, 0) . '%'
-                              : '$' . number_format($item->discount, 2) ?>
-                          </div>
-                        <?php endif; ?>
-                      </td>
-                      <td><?= $item->quantity ?></td>
-                      <td class="text-end">
-                        <div class="fw-bold">$<?= number_format(
-                          $item->quantity * $item->price,
-                          2,
-                        ) ?></div>
-                      </td>
-                    </tr>
+                        </td>
+                        <td><?= Html::encode($item->serial ?: '-') ?></td>
+                        <td>
+                          $<?= number_format($item->price, 2) ?>
+                          <?php if ($item->discount > 0): ?>
+                            <div class="text-danger small">
+                              - <?= $item->discount_type === 'percentage'
+                                  ? number_format($item->discount, 0) . '%'
+                                  : '$' . number_format($item->discount, 2) ?>
+                            </div>
+                          <?php endif; ?>
+                        </td>
+                        <td><?= $item->quantity ?></td>
+                        <td class="text-end">
+                          <div class="fw-bold">$<?= number_format(
+                                                  $item->quantity * $item->price,
+                                                  2,
+                                                ) ?></div>
+                        </td>
+                      </tr>
                     <?php endforeach; ?>
                   </tbody>
                 </table>
@@ -274,78 +244,78 @@ $utils = Yii::$app->utils;
                     <tr>
                       <td>Sub Total</td>
                       <td class="text-end">$<?= number_format(
-                        $model->sub_total,
-                        2,
-                      ) ?></td>
+                                              $model->sub_total,
+                                              2,
+                                            ) ?></td>
                     </tr>
                     <?php if ($model->discount_amount > 0): ?>
-                    <tr>
-                      <td>Discount</td>
-                      <td class="text-end text-danger">- $<?= number_format(
-                        $model->discount_amount,
-                        2,
-                      ) ?></td>
-                    </tr>
+                      <tr>
+                        <td>Discount</td>
+                        <td class="text-end text-danger">- $<?= number_format(
+                                                              $model->discount_amount,
+                                                              2,
+                                                            ) ?></td>
+                      </tr>
                     <?php endif; ?>
                     <?php if ($model->delivery_fee > 0): ?>
-                    <tr>
-                      <td>Delivery Fee</td>
-                      <td class="text-end">$<?= number_format(
-                        $model->delivery_fee,
-                        2,
-                      ) ?></td>
-                    </tr>
+                      <tr>
+                        <td>Delivery Fee</td>
+                        <td class="text-end">$<?= number_format(
+                                                $model->delivery_fee,
+                                                2,
+                                              ) ?></td>
+                      </tr>
                     <?php endif; ?>
                     <?php if ($model->extra_charge > 0): ?>
-                    <tr>
-                      <td>Extra Charge</td>
-                      <td class="text-end">$<?= number_format(
-                        $model->extra_charge,
-                        2,
-                      ) ?></td>
-                    </tr>
+                      <tr>
+                        <td>Extra Charge</td>
+                        <td class="text-end">$<?= number_format(
+                                                $model->extra_charge,
+                                                2,
+                                              ) ?></td>
+                      </tr>
                     <?php endif; ?>
                     <tr>
                       <td>Paid</td>
                       <td class="text-end">$<?= number_format(
-                        $model->paid_amount,
-                        2,
-                      ) ?></td>
+                                              $model->paid_amount,
+                                              2,
+                                            ) ?></td>
                     </tr>
                     <tr>
                       <td>Balance</td>
                       <td class="text-end text-danger">$<?= number_format(
-                        $model->balance_amount,
-                        2,
-                      ) ?></td>
+                                                          $model->balance_amount,
+                                                          2,
+                                                        ) ?></td>
                     </tr>
                     <tr class="border-top border-top-dashed fs-15">
                       <th scope="row">Total Amount</th>
                       <th class="text-end text-success fs-5">$<?= number_format(
-                        $model->grand_total,
-                        2,
-                      ) ?></th>
+                                                                $model->grand_total,
+                                                                2,
+                                                              ) ?></th>
                     </tr>
                   </tbody>
                 </table>
               </div>
               <?php if ($model->remark): ?>
-              <div class="mt-4">
-                <div class="alert alert-info">
-                  <p class="mb-0"><span class="fw-semibold">NOTES:</span>
-                    <span><?= nl2br(Html::encode($model->remark)) ?></span>
-                  </p>
+                <div class="mt-4">
+                  <div class="alert alert-info">
+                    <p class="mb-0"><span class="fw-semibold">NOTES:</span>
+                      <span><?= nl2br(Html::encode($model->remark)) ?></span>
+                    </p>
+                  </div>
                 </div>
-              </div>
               <?php endif; ?>
 
               <?php if ($outlet && $outlet->terms): ?>
-              <div class="mt-4">
-                <h6 class="text-muted text-uppercase fw-semibold mb-2">Terms & Conditions:</h6>
-                <p class="text-muted mb-0"><?= nl2br(
-                  Html::encode($outlet->terms),
-                ) ?></p>
-              </div>
+                <div class="mt-4">
+                  <h6 class="text-muted text-uppercase fw-semibold mb-2">Terms & Conditions:</h6>
+                  <p class="text-muted mb-0"><?= nl2br(
+                                                Html::encode($outlet->terms),
+                                              ) ?></p>
+                </div>
               <?php endif; ?>
             </div>
           </div>
@@ -364,7 +334,7 @@ $utils = Yii::$app->utils;
             <span>Total Sale</span>
             <strong>$<?= number_format($totalSale, 2) ?></strong>
           </div>
-          <hr/>
+          <hr />
           <div class="d-flex justify-content-between mb-2">
             <span>Margin</span>
             <strong>$<?= number_format($totalMargin, 2) ?></strong>
@@ -384,9 +354,9 @@ $utils = Yii::$app->utils;
             <div class="d-flex justify-content-between align-items-center mb-3">
               <h6 class="text-muted text-uppercase fw-semibold mb-0">Record Payment</h6>
               <small class="text-muted">Balance: $<?= number_format(
-                $model->balance_amount,
-                2,
-              ) ?></small>
+                                                    $model->balance_amount,
+                                                    2,
+                                                  ) ?></small>
             </div>
             <?php if ($paymentModel->hasErrors()): ?>
               <div class="alert alert-danger small mb-3">
@@ -406,105 +376,101 @@ $utils = Yii::$app->utils;
                 'post',
                 ['id' => 'invoice-payment-form'],
               ) ?>
-                <div class="mb-3">
-                  <label class="form-label d-flex justify-content-between">
-                    <span>Amount</span>
-                    <small class="text-muted">
-                      Remaining: $<?= number_format(
-                        $model->balance_amount,
-                        2,
-                      ) ?>
-                    </small>
-                  </label>
-                  <div class="input-group">
-                    <span class="input-group-text">$</span>
-                    <input
-                      id="payment-amount-input"
-                      type="number"
-                      step="0.01"
-                      min="0.01"
-                      max="<?= number_format(
-                        $model->balance_amount,
-                        2,
-                        '.',
-                        '',
-                      ) ?>"
-                      name="InvoicePayment[amount]"
-                      value="<?= number_format(
-                        $paymentModel->amount,
-                        2,
-                        '.',
-                        '',
-                      ) ?>"
-                      class="form-control"
-                      required
-                    >
-                  </div>
-                  <?= Html::error($paymentModel, 'amount', [
-                    'class' => 'text-danger small',
-                  ]) ?>
-                  <div
-                    id="payment-suggestions"
-                    class="btn-group btn-group-sm mt-2"
-                    role="group"
-                    data-balance="<?= number_format(
-                      $model->balance_amount,
-                      2,
-                      '.',
-                      '',
-                    ) ?>"
-                  >
-                    <button type="button" class="btn btn-outline-secondary payment-suggestion" data-percent="0.25">25%</button>
-                    <button type="button" class="btn btn-outline-secondary payment-suggestion" data-percent="0.5">50%</button>
-                    <button type="button" class="btn btn-outline-secondary payment-suggestion" data-percent="0.75">75%</button>
-                    <button type="button" class="btn btn-outline-secondary payment-suggestion" data-percent="1">Full Amount</button>
-                  </div>
-                </div>
-                <div class="mb-3">
-                  <label class="form-label">Payment Method</label>
-                  <?= Html::dropDownList(
-                    'InvoicePayment[payment_method_id]',
-                    $paymentModel->payment_method_id,
-                    $paymentMethods,
-                    [
-                      'prompt' => 'Select payment method',
-                      'class' => 'form-select',
-                      'required' => true,
-                    ],
-                  ) ?>
-                  <?= Html::error($paymentModel, 'payment_method_id', [
-                    'class' => 'text-danger small',
-                  ]) ?>
-                </div>
-                <div class="mb-3">
-                  <label class="form-label">Payment Date</label>
+              <div class="mb-3">
+                <label class="form-label d-flex justify-content-between">
+                  <span>Amount</span>
+                  <small class="text-muted">
+                    Remaining: $<?= number_format(
+                                  $model->balance_amount,
+                                  2,
+                                ) ?>
+                  </small>
+                </label>
+                <div class="input-group">
+                  <span class="input-group-text">$</span>
                   <input
+                    id="payment-amount-input"
+                    type="number"
+                    step="0.01"
+                    min="0.01"
+                    max="<?= number_format(
+                            $model->balance_amount,
+                            2,
+                            '.',
+                            '',
+                          ) ?>"
+                    name="InvoicePayment[amount]"
+                    value="<?= number_format(
+                              $paymentModel->amount,
+                              2,
+                              '.',
+                              '',
+                            ) ?>"
                     class="form-control"
-                    type="text"
-                    name="InvoicePayment[date]"
-                    value="<?= Html::encode($paymentModel->date) ?>"
-                    data-provider="flatpickr"
-                    data-date-format="Y-m-d"
-                    data-alt-input="true"
-                    data-alt-format="d M, Y"
-                    autocomplete="off"
-                    required
-                  >
-                  <?= Html::error($paymentModel, 'date', [
-                    'class' => 'text-danger small',
-                  ]) ?>
+                    required>
                 </div>
-                <div class="mb-3">
-                  <label class="form-label">Remark</label>
-                  <textarea
-                    name="InvoicePayment[remark]"
-                    class="form-control"
-                    rows="2"
-                  ><?= Html::encode($paymentModel->remark) ?></textarea>
+                <?= Html::error($paymentModel, 'amount', [
+                  'class' => 'text-danger small',
+                ]) ?>
+                <div
+                  id="payment-suggestions"
+                  class="btn-group btn-group-sm mt-2"
+                  role="group"
+                  data-balance="<?= number_format(
+                                  $model->balance_amount,
+                                  2,
+                                  '.',
+                                  '',
+                                ) ?>">
+                  <button type="button" class="btn btn-outline-secondary payment-suggestion" data-percent="0.25">25%</button>
+                  <button type="button" class="btn btn-outline-secondary payment-suggestion" data-percent="0.5">50%</button>
+                  <button type="button" class="btn btn-outline-secondary payment-suggestion" data-percent="0.75">75%</button>
+                  <button type="button" class="btn btn-outline-secondary payment-suggestion" data-percent="1">Full Amount</button>
                 </div>
-                <div class="d-grid">
-                  <button type="submit" class="btn btn-success">Record payment</button>
-                </div>
+              </div>
+              <div class="mb-3">
+                <label class="form-label">Payment Method</label>
+                <?= Html::dropDownList(
+                  'InvoicePayment[payment_method_id]',
+                  $paymentModel->payment_method_id,
+                  $paymentMethods,
+                  [
+                    'prompt' => 'Select payment method',
+                    'class' => 'form-select',
+                    'required' => true,
+                  ],
+                ) ?>
+                <?= Html::error($paymentModel, 'payment_method_id', [
+                  'class' => 'text-danger small',
+                ]) ?>
+              </div>
+              <div class="mb-3">
+                <label class="form-label">Payment Date</label>
+                <input
+                  class="form-control"
+                  type="text"
+                  name="InvoicePayment[date]"
+                  value="<?= Html::encode($paymentModel->date) ?>"
+                  data-provider="flatpickr"
+                  data-date-format="Y-m-d"
+                  data-alt-input="true"
+                  data-alt-format="d M, Y"
+                  autocomplete="off"
+                  required>
+                <?= Html::error($paymentModel, 'date', [
+                  'class' => 'text-danger small',
+                ]) ?>
+              </div>
+              <div class="mb-3">
+                <label class="form-label">Remark</label>
+                <textarea
+                  name="InvoicePayment[remark]"
+                  class="form-control"
+                  rows="2"><?= Html::encode($paymentModel->remark) ?></textarea>
+              </div>
+              <div class="d-grid">
+                <button type="submit" class="btn btn-success">Record payment</button>
+              </div>
               <?= Html::endForm() ?>
             <?php endif; ?>
           </div>
@@ -534,28 +500,28 @@ $utils = Yii::$app->utils;
                       <td>
                         <div class="small">
                           <a href="<?= Url::to([
-                            'invoice/view',
-                            'id' => $model->id,
-                          ]) ?>" class="text-decoration-underline"><?= Html::encode(
-  $payment->code,
-) ?></a>
+                                      'invoice/view',
+                                      'id' => $model->id,
+                                    ]) ?>" class="text-decoration-underline"><?= Html::encode(
+                                                                                $payment->code,
+                                                                              ) ?></a>
                         </div>
-                         <div>
+                        <div>
                           <strong><?= Html::encode(
-                            $utils->date($payment->date),
-                          ) ?></strong>
+                                    $utils->date($payment->date),
+                                  ) ?></strong>
                         </div>
-                        </td>
+                      </td>
                       <td class="text-end">
                         <div><?= Html::encode(
-                          $payment->paymentMethod
-                            ? $payment->paymentMethod->name
-                            : '-',
-                        ) ?></div>
-                         <div class="text-primary fw-bold"><?= $utils->dollarFormat(
-                           $payment->amount,
-                         ) ?></div>
-                        </td>
+                                $payment->paymentMethod
+                                  ? $payment->paymentMethod->name
+                                  : '-',
+                              ) ?></div>
+                        <div class="text-primary fw-bold"><?= $utils->dollarFormat(
+                                                            $payment->amount,
+                                                          ) ?></div>
+                      </td>
                     </tr>
                     <?php if ($payment->remark): ?>
                       <tr>
@@ -580,15 +546,15 @@ $utils = Yii::$app->utils;
                 <div class="mb-2">
                   <div>
                     <?= Html::encode($act->formatTimestamp()) ?> - <strong>
-                      <?= Html::encode($act->action) ?></strong> 
-                      by <?= Html::encode(
-                        $act->user ? $act->user->getName() : 'System',
-                      ) ?></div>
+                      <?= Html::encode($act->action) ?></strong>
+                    by <?= Html::encode(
+                          $act->user ? $act->user->getName() : 'System',
+                        ) ?></div>
                   <div class="text-muted">IP: <?= Html::encode(
-                    $act->ip_address,
-                  ) ?></div>
+                                                $act->ip_address,
+                                              ) ?></div>
                 </div>
-                <hr class="my-2"/>
+                <hr class="my-2" />
               <?php endforeach; ?>
             </div>
           </div>

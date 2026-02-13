@@ -68,7 +68,7 @@ class PurchaseOrder extends \yii\db\ActiveRecord
   public function rules()
   {
     return [
-      [['code', 'serial_code', 'supplier_id', 'date', 'due_date'], 'required'],
+      [['code', 'serial_code', 'supplier_id', 'date'], 'required'],
       [['supplier_id', 'status', 'created_by', 'updated_by'], 'integer'],
       [['date', 'due_date', 'created_at', 'updated_at'], 'safe'],
       [['remark'], 'string'],

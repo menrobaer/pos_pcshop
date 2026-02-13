@@ -17,7 +17,7 @@ $this->params['breadcrumbs'][] = $this->title;
 
 echo \app\widgets\Modal::widget([
   'id' => 'modal-product',
-  'size' => 'modal-md',
+  'size' => 'modal-lg',
 ]);
 ?>
 <div class="product-index">

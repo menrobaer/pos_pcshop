@@ -210,12 +210,29 @@ class PurchaseOrderController extends Controller
               try {
                 $product = Product::findOne($item->product_id);
                 if ($product) {
-                  $product->cost = $item->cost;
-                  $product->price = $item->price;
+                  // For PO, the item net price is the new cost for the product
+                  $product->cost = $item->price;
                   $product->save(false);
                 }
               } catch (\Throwable $e) {
                 // do not block PO creation on product update failure
+              }
+
+              // Save serials to product variation
+              if (!empty($item->serial)) {
+                $serials = explode(',', $item->serial);
+                foreach ($serials as $s) {
+                  $s = trim($s);
+                  if ($s) {
+                    $variation = new \app\models\ProductVariation();
+                    $variation->product_id = $item->product_id;
+                    $variation->serial = $s;
+                    // Ignore if serial already exists or fails to save to prevent blocking the whole PO
+                    if (!$variation->save()) {
+                      Yii::error('Failed to save product variation: ' . json_encode($variation->getErrors()));
+                    }
+                  }
+                }
               }
 
               // track inventory
@@ -226,6 +243,48 @@ class PurchaseOrderController extends Controller
                 Inventory::TYPE_PURCHASE_ORDER,
                 'in',
               );
+            }
+          }
+
+          // Auto insert full payment
+          if ($model->grand_total > 0) {
+            $paymentMethod = PaymentMethod::find()->one();
+            if ($paymentMethod) {
+              $payment = new PurchaseOrderPayment();
+              $payment->purchase_order_id = $model->id;
+              $payment->payment_method_id = $paymentMethod->id;
+              $payment->amount = (float) $model->grand_total;
+              $payment->date = $model->date;
+              $payment->code = $this->generatePurchaseOrderPaymentCode($model);
+              $payment->created_at = date('Y-m-d H:i:s');
+              $payment->created_by = Yii::$app->user->id;
+              if (!$payment->save()) {
+                throw new Exception(
+                  'Failed to auto-record full payment: ' .
+                    json_encode($payment->getErrors()),
+                );
+              }
+
+              $model->paid_amount = (float) $model->grand_total;
+              $model->balance_amount = 0;
+              $model->status = PurchaseOrder::STATUS_PAID;
+              if (!$model->save(false)) {
+                throw new Exception(
+                  'Failed to update Purchase Order payment status.',
+                );
+              }
+            }
+            try {
+              Yii::$app->utils::insertActivityLog([
+                'action' => 'payment',
+                'params' => [
+                  'purchase_order_id' => $model->id,
+                  'payment_id' => $payment->id,
+                  'amount' => $payment->amount,
+                ],
+              ]);
+            } catch (\Throwable $e) {
+              // Do not block request on logging failure
             }
           }
 
@@ -241,14 +300,21 @@ class PurchaseOrderController extends Controller
           }
           Yii::$app->session->setFlash(
             'success',
-            'PurchaseOrder created successfully.',
+            'Purchase Order created successfully.',
           );
+
+          // If submitted from product view, it usually only has one product item.
+          // Redirect back to product view to see updated stock and serials.
+          $items = $this->request->post('PurchaseOrderItem', []);
+          if (count($items) === 1 && isset($items[0]['product_id'])) {
+            return $this->redirect(['product/view', 'id' => $items[0]['product_id']]);
+          }
+
           return $this->redirect(['view', 'id' => $model->id]);
         } catch (Exception $e) {
           $transaction->rollBack();
           Yii::$app->session->setFlash('error', $e->getMessage());
-          print_r($e->getMessage());
-          exit();
+          return $this->redirect(Yii::$app->request->referrer ?: ['product/index']);
         }
       }
     }
