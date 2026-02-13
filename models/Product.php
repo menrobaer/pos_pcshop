@@ -11,7 +11,6 @@ use Yii;
  * @property string|null $image
  * @property string $name
  * @property string $sku
- * @property string $serial
  * @property int $brand_id
  * @property int $category_id
  * @property int $model_id
@@ -70,7 +69,6 @@ class Product extends \yii\db\ActiveRecord
       [['image'], 'string', 'max' => 255],
       [['name'], 'string', 'max' => 100],
       [['sku'], 'string', 'max' => 50],
-      [['serial'], 'string', 'max' => 1000],
       [
         ['imageFile'],
         'image',

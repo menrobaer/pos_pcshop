@@ -174,13 +174,45 @@ class InvoiceController extends Controller
    * If creation is successful, the browser will be redirected to the 'index' page.
    * @return string|\yii\web\Response
    */
-  public function actionCreate()
+  public function actionCreate($quotation_id = null)
   {
     $model = new Invoice();
     $model->date = date('Y-m-d');
     $model->due_date = date('Y-m-d', strtotime('+7 days'));
     $model->code = $this->generateCode();
     $model->serial_code = $this->generateSerialCode();
+    $items = [];
+
+    if ($quotation_id) {
+      $quotation = \app\models\Quotation::findOne($quotation_id);
+      if ($quotation) {
+        $model->customer_id = $quotation->customer_id;
+        $model->remark = $quotation->remark;
+        $model->delivery_fee = $quotation->delivery_fee;
+        $model->extra_charge = $quotation->extra_charge;
+        $model->discount_amount = $quotation->discount_amount;
+        $model->sub_total = $quotation->sub_total;
+        $model->grand_total = $quotation->grand_total;
+        $model->quotation_id = $quotation->id;
+
+        foreach ($quotation->items as $qItem) {
+          $item = new InvoiceItem();
+          $item->product_id = $qItem->product_id;
+          $item->product_name = $qItem->product_name;
+          $item->sku = $qItem->sku;
+          $item->unit = $qItem->unit;
+          $item->quantity = $qItem->quantity;
+          $item->description = $qItem->description;
+          $item->discount_type = $qItem->discount_type;
+          $item->discount = $qItem->discount;
+          $item->full_price = $qItem->full_price;
+          $item->cost = $qItem->cost;
+          $item->price = $qItem->price;
+          $item->serial = ''; // user must choose serial
+          $items[] = $item;
+        }
+      }
+    }
 
     if ($this->request->isPost) {
       if ($model->load($this->request->post())) {
@@ -213,10 +245,28 @@ class InvoiceController extends Controller
                 Inventory::TYPE_INVOICE,
                 'out',
               );
+
+              // remove serial from product variation
+              if (!empty($item->serial)) {
+                \app\models\ProductVariation::deleteAll([
+                  'product_id' => $item->product_id,
+                  'serial' => $item->serial,
+                ]);
+              }
             }
           }
 
           $transaction->commit();
+
+          // update quotation status if applicable
+          if ($model->quotation_id) {
+            $quotation = \app\models\Quotation::findOne($model->quotation_id);
+            if ($quotation) {
+              $quotation->status = \app\models\Quotation::STATUS_ACCEPTED;
+              $quotation->save(false, ['status']);
+            }
+          }
+
           try {
             Yii::$app->utils::insertActivityLog([
               'params' => array_merge(Yii::$app->request->post(), [
@@ -242,18 +292,13 @@ class InvoiceController extends Controller
 
     return $this->render('create', [
       'model' => $model,
+      'items' => $items,
       'customers' => $this->getCustomers(),
       'products' => $this->getProducts(),
     ]);
   }
 
-  /**
-   * Updates an existing Invoice model.
-   * If update is successful, the browser will be redirected to the 'index' page.
-   * @param int $id ID
-   * @return string|\yii\web\Response
-   * @throws NotFoundHttpException if the model cannot be found
-   */
+
   public function actionUpdate($id)
   {
     $model = $this->findModel($id);
@@ -285,6 +330,16 @@ class InvoiceController extends Controller
             ['available' => $oldItem->quantity],
             ['id' => $oldItem->product_id],
           );
+
+          // Restore variation if it was removed
+          if (!empty($oldItem->serial)) {
+            if (!\app\models\ProductVariation::find()->where(['product_id' => $oldItem->product_id, 'serial' => $oldItem->serial])->exists()) {
+              $v = new \app\models\ProductVariation();
+              $v->product_id = $oldItem->product_id;
+              $v->serial = $oldItem->serial;
+              $v->save(false);
+            }
+          }
         }
         Inventory::deleteAll([
           'type' => Inventory::TYPE_INVOICE,
@@ -312,6 +367,14 @@ class InvoiceController extends Controller
               Inventory::TYPE_INVOICE,
               'out',
             );
+
+            // remove serial from product variation
+            if (!empty($item->serial)) {
+              \app\models\ProductVariation::deleteAll([
+                'product_id' => $item->product_id,
+                'serial' => $item->serial,
+              ]);
+            }
           }
         }
 
@@ -365,6 +428,16 @@ class InvoiceController extends Controller
           Inventory::TYPE_INVOICE,
           'in',
         );
+
+        // Restore variations
+        if (!empty($item->serial)) {
+          if (!\app\models\ProductVariation::find()->where(['product_id' => $item->product_id, 'serial' => $item->serial])->exists()) {
+            $v = new \app\models\ProductVariation();
+            $v->product_id = $item->product_id;
+            $v->serial = $item->serial;
+            $v->save(false);
+          }
+        }
       }
 
       InvoiceItem::deleteAll(['invoice_id' => $model->id]);
@@ -456,6 +529,16 @@ class InvoiceController extends Controller
         Inventory::TYPE_INVOICE,
         'in',
       );
+
+      // Restore variations
+      if (!empty($item->serial)) {
+        if (!\app\models\ProductVariation::find()->where(['product_id' => $item->product_id, 'serial' => $item->serial])->exists()) {
+          $v = new \app\models\ProductVariation();
+          $v->product_id = $item->product_id;
+          $v->serial = $item->serial;
+          $v->save(false);
+        }
+      }
     }
 
     $model->status = Invoice::STATUS_CANCELLED;
@@ -642,7 +725,7 @@ class InvoiceController extends Controller
           'id' => $product->id,
           'name' => $product->name,
           'sku' => $product->sku,
-          'serial' => $product->serial,
+          'serial' => '-',
           'price' => $product->price,
           'cost' => $product->cost,
           'description' => $product->description,
@@ -657,29 +740,29 @@ class InvoiceController extends Controller
     Yii::$app->response->format = \yii\web\Response::FORMAT_JSON;
     $out = ['results' => ['id' => '', 'text' => '']];
     if (!is_null($q)) {
-      $query = Product::find()
-        ->select([
-          'id',
-          'name',
-          'sku',
-          'serial',
-          'price',
-          'cost',
-          'description',
-        ])
-        ->where(['like', 'name', $q])
-        ->orWhere(['like', 'sku', $q])
-        ->orWhere(['like', 'serial', $q])
+      $query = \app\models\ProductVariation::find()
+        ->alias('pv')
+        ->joinWith('product p', true, 'INNER JOIN')
+        ->where(['like', 'pv.serial', $q])
+        ->orWhere(['like', 'p.name', $q])
+        ->orWhere(['like', 'p.sku', $q])
         ->limit(20)
-        ->asArray()
         ->all();
 
       $results = [];
       foreach ($query as $row) {
         $results[] = [
-          'id' => $row['id'],
-          'text' => $row['name'] . ' (' . $row['sku'] . ')',
-          'data' => $row,
+          'id' => $row->product_id,
+          'text' => $row->product->name . ' (' . $row->product->sku . ') - ' . $row->serial,
+          'data' => [
+            'id' => $row->product_id,
+            'name' => $row->product->name,
+            'sku' => $row->product->sku,
+            'serial' => $row->serial,
+            'price' => $row->product->price,
+            'cost' => $row->product->cost,
+            'description' => $row->product->description,
+          ],
         ];
       }
       $out['results'] = $results;

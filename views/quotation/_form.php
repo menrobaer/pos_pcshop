@@ -17,7 +17,7 @@ $items = $items ?? $model->items;
     <?php
     $formOptions = ['id' => 'quotation-form'];
     if ($isDuplicate) {
-      $formOptions['action'] = ['quotation/create'];
+        $formOptions['action'] = ['quotation/create'];
     }
     $form = ActiveForm::begin($formOptions);
     ?>
@@ -28,22 +28,22 @@ $items = $items ?? $model->items;
         </div>
         <div class="col-md-3">
             <?= $form->field($model, 'customer_id')->dropDownList($customers, [
-              'prompt' => 'Select Customer',
-              'class' => 'form-control has-select2',
+                'prompt' => 'Select Customer',
+                'class' => 'form-control has-select2',
             ]) ?>
         </div>
         <div class="col-md-2">
             <?= $form->field($model, 'date')->textInput([
-              'data-provider' => 'flatpickr',
-              'data-date-format' => 'Y-m-d',
-              'data-altFormat' => 'd M, Y',
+                'data-provider' => 'flatpickr',
+                'data-date-format' => 'Y-m-d',
+                'data-altFormat' => 'd M, Y',
             ]) ?>
         </div>
         <div class="col-md-2">
             <?= $form->field($model, 'due_date')->textInput([
-              'data-provider' => 'flatpickr',
-              'data-date-format' => 'Y-m-d',
-              'data-altFormat' => 'd M, Y',
+                'data-provider' => 'flatpickr',
+                'data-date-format' => 'Y-m-d',
+                'data-altFormat' => 'd M, Y',
             ]) ?>
         </div>
     </div>
@@ -67,120 +67,120 @@ $items = $items ?? $model->items;
                     </thead>
                     <tbody>
                         <?php if (!empty($items)): ?>
-                          <?php foreach ($items as $index => $item): ?>
+                            <?php foreach ($items as $index => $item): ?>
                                 <tr data-index="<?= $index ?>">
                                     <td>
                                         <?= Html::dropDownList(
-                                          "QuotationItem[$index][product_id]",
-                                          $item->product_id,
-                                          [
-                                            $item->product_id =>
-                                              $item->product_name .
-                                              ($item->sku
-                                                ? ' (' . $item->sku . ')'
-                                                : ''),
-                                          ],
-                                          [
-                                            'class' =>
-                                              'form-control product-select select2-ajax',
-                                            'prompt' => 'Select Product',
-                                          ],
+                                            "QuotationItem[$index][product_id]",
+                                            $item->product_id,
+                                            [
+                                                $item->product_id =>
+                                                $item->product_name .
+                                                    ($item->sku
+                                                        ? ' (' . $item->sku . ')'
+                                                        : ''),
+                                            ],
+                                            [
+                                                'class' =>
+                                                'form-control product-select select2-ajax',
+                                                'prompt' => 'Select Product',
+                                            ],
                                         ) ?>
                                         <?= Html::hiddenInput(
-                                          "QuotationItem[$index][product_name]",
-                                          $item->product_name,
-                                          ['class' => 'product-name'],
+                                            "QuotationItem[$index][product_name]",
+                                            $item->product_name,
+                                            ['class' => 'product-name'],
                                         ) ?>
                                         <div class="mt-1">
                                             <?= Html::textarea(
-                                              "QuotationItem[$index][description]",
-                                              $item->description,
-                                              [
-                                                'class' =>
-                                                  'form-control form-control-sm description auto-height',
-                                                'rows' => 4,
-                                                'placeholder' => 'Description',
-                                              ],
+                                                "QuotationItem[$index][description]",
+                                                $item->description,
+                                                [
+                                                    'class' =>
+                                                    'form-control form-control-sm description auto-height',
+                                                    'rows' => 4,
+                                                    'placeholder' => 'Description',
+                                                ],
                                             ) ?>
                                         </div>
                                     </td>
                                     <td><?= Html::textInput(
-                                      "QuotationItem[$index][serial]",
-                                      $item->serial,
-                                      [
-                                        'class' => 'form-control serial',
-                                      ],
-                                    ) ?></td>
+                                            "QuotationItem[$index][serial]",
+                                            $item->serial,
+                                            [
+                                                'class' => 'form-control serial',
+                                            ],
+                                        ) ?></td>
                                     <td><?= Html::textInput(
-                                      "QuotationItem[$index][cost]",
-                                      $item->cost,
-                                      [
-                                        'class' => 'form-control cost',
-                                        'readonly' => true,
-                                      ],
-                                    ) ?></td>
+                                            "QuotationItem[$index][cost]",
+                                            $item->cost,
+                                            [
+                                                'class' => 'form-control cost',
+                                                'readonly' => true,
+                                            ],
+                                        ) ?></td>
                                     <td><?= Html::textInput(
-                                      "QuotationItem[$index][quantity]",
-                                      $item->quantity,
-                                      [
-                                        'class' => 'form-control qty',
-                                        'type' => 'number',
-                                      ],
-                                    ) ?></td>
+                                            "QuotationItem[$index][quantity]",
+                                            $item->quantity,
+                                            [
+                                                'class' => 'form-control qty',
+                                                'type' => 'number',
+                                            ],
+                                        ) ?></td>
                                     <td><?= Html::textInput(
-                                      "QuotationItem[$index][full_price]",
-                                      $item->full_price,
-                                      [
-                                        'class' => 'form-control full-price',
-                                        'type' => 'number',
-                                        'step' => '0.01',
-                                      ],
-                                    ) ?>
-                                    <?= Html::hiddenInput(
-                                      "QuotationItem[$index][price]",
-                                      $item->price,
-                                      ['class' => 'price'],
-                                    ) ?></td>
+                                            "QuotationItem[$index][full_price]",
+                                            $item->full_price,
+                                            [
+                                                'class' => 'form-control full-price',
+                                                'type' => 'number',
+                                                'step' => '0.01',
+                                            ],
+                                        ) ?>
+                                        <?= Html::hiddenInput(
+                                            "QuotationItem[$index][price]",
+                                            $item->price,
+                                            ['class' => 'price'],
+                                        ) ?></td>
                                     <td>
                                         <div class="input-group">
                                             <?= Html::textInput(
-                                              "QuotationItem[$index][discount]",
-                                              $item->discount,
-                                              [
-                                                'class' =>
-                                                  'form-control discount',
-                                                'type' => 'number',
-                                                'step' => '0.01',
-                                              ],
+                                                "QuotationItem[$index][discount]",
+                                                $item->discount,
+                                                [
+                                                    'class' =>
+                                                    'form-control discount',
+                                                    'type' => 'number',
+                                                    'step' => '0.01',
+                                                ],
                                             ) ?>
                                             <button type="button" class="btn btn-outline-secondary toggle-discount-type">
                                                 <?= $item->discount_type ===
-                                                'percentage'
-                                                  ? '%'
-                                                  : '$' ?>
+                                                    'percentage'
+                                                    ? '%'
+                                                    : '$' ?>
                                             </button>
                                             <?= Html::hiddenInput(
-                                              "QuotationItem[$index][discount_type]",
-                                              $item->discount_type ?: 'fixed',
-                                              ['class' => 'discount-type'],
+                                                "QuotationItem[$index][discount_type]",
+                                                $item->discount_type ?: 'fixed',
+                                                ['class' => 'discount-type'],
                                             ) ?>
                                         </div>
                                     </td>
                                     <td class="item-total fw-bold fs-6"><?= number_format(
-                                      $item->quantity * $item->price,
-                                      2,
-                                    ) ?></td>
+                                                                            $item->quantity * $item->price,
+                                                                            2,
+                                                                        ) ?></td>
                                     <td>
                                         <button type="button" class="btn btn-danger btn-sm remove-item"><i class="ri-delete-bin-line"></i></button>
                                         <?= Html::hiddenInput(
-                                          "QuotationItem[$index][unit]",
-                                          $item->unit,
-                                          ['class' => 'unit'],
+                                            "QuotationItem[$index][unit]",
+                                            $item->unit,
+                                            ['class' => 'unit'],
                                         ) ?>
                                         <?= Html::hiddenInput(
-                                          "QuotationItem[$index][sku]",
-                                          $item->sku,
-                                          ['class' => 'sku'],
+                                            "QuotationItem[$index][sku]",
+                                            $item->sku,
+                                            ['class' => 'sku'],
                                         ) ?>
                                     </td>
                                 </tr>
@@ -210,27 +210,27 @@ $items = $items ?? $model->items;
                     <span id="sub-total-display" class="fw-bold fs-5 text-primary">0.00</span>
                 </div>
                 <?= $form
-                  ->field($model, 'sub_total')
-                  ->hiddenInput(['id' => 'sub-total-input'])
-                  ->label(false) ?>
-                
+                    ->field($model, 'sub_total')
+                    ->hiddenInput(['id' => 'sub-total-input'])
+                    ->label(false) ?>
+
                 <div class="d-flex justify-content-between mb-2">
                     <span class="fw-bold fs-6">Total Discount:</span>
                     <span id="total-discount-display" class="fw-bold fs-6">0.00</span>
                 </div>
                 <?= $form
-                  ->field($model, 'discount_amount')
-                  ->hiddenInput(['id' => 'discount-amount-input'])
-                  ->label(false) ?>
+                    ->field($model, 'discount_amount')
+                    ->hiddenInput(['id' => 'discount-amount-input'])
+                    ->label(false) ?>
 
                 <div class="row mb-2">
                     <div class="col-6">Delivery Fee:</div>
                     <div class="col-6">
                         <?= Html::activeTextInput($model, 'delivery_fee', [
-                          'class' =>
+                            'class' =>
                             'form-control form-control-sm text-end cost-calc',
-                          'type' => 'number',
-                          'step' => '0.01',
+                            'type' => 'number',
+                            'step' => '0.01',
                         ]) ?>
                     </div>
                 </div>
@@ -239,10 +239,10 @@ $items = $items ?? $model->items;
                     <div class="col-6">Extra Charge:</div>
                     <div class="col-6">
                         <?= Html::activeTextInput($model, 'extra_charge', [
-                          'class' =>
+                            'class' =>
                             'form-control form-control-sm text-end cost-calc',
-                          'type' => 'number',
-                          'step' => '0.01',
+                            'type' => 'number',
+                            'step' => '0.01',
                         ]) ?>
                     </div>
                 </div>
@@ -252,29 +252,29 @@ $items = $items ?? $model->items;
                     <span class="h4 fw-bold" id="grand-total-display">0.00</span>
                 </div>
                 <?= $form
-                  ->field($model, 'grand_total')
-                  ->hiddenInput(['id' => 'grand-total-input'])
-                  ->label(false) ?>
+                    ->field($model, 'grand_total')
+                    ->hiddenInput(['id' => 'grand-total-input'])
+                    ->label(false) ?>
             </div>
         </div>
     </div>
 
     <div class="d-flex mt-4 gap-3">
         <?= Html::a(
-          'Cancel',
-          ['index'],
-          ['class' => 'btn btn-light px-5 rounded-pill'],
+            'Cancel',
+            ['index'],
+            ['class' => 'btn btn-light px-5 rounded-pill'],
         ) ?>
         <?php
         $isDuplicate = $isDuplicate ?? false;
         $submitLabel = $model->isNewRecord
-          ? ($isDuplicate
-            ? 'Duplicate Quotation'
-            : 'Create Quotation')
-          : 'Update Quotation';
+            ? ($isDuplicate
+                ? 'Duplicate Quotation'
+                : 'Create Quotation')
+            : 'Update Quotation';
         ?>
         <?= Html::submitButton($submitLabel, [
-          'class' => 'btn btn-success text-uppercase rounded-pill px-5',
+            'class' => 'btn btn-success text-uppercase rounded-pill px-5',
         ]) ?>
     </div>
 
@@ -453,5 +453,9 @@ $('#quotation-date').on('change', function() {
 JS;
 $this->registerJs($js);
 
-
+if ($model->isNewRecord) {
+    $this->registerJs('
+      $("#add-item").trigger("click");
+    ');
+}
 ?>

@@ -25,7 +25,6 @@ class m260210_051345_create_product_table extends Migration
         'image' => $this->string(),
         'name' => $this->string(100)->notNull(),
         'sku' => $this->string(50),
-        'serial' => $this->string(50),
         'brand_id' => $this->integer()->notNull(),
         'category_id' => $this->integer()->notNull(),
         'description' => $this->text(),
