@@ -92,11 +92,9 @@ echo \app\widgets\Modal::widget([
                                     'max-height: 280px; object-fit: contain;',
                                   'alt' => $model->name,
                                 ]) ?>
-                                <div class="mt-3">
-                                    <?= $model->getStatusBadge() ?>
-                                </div>
                             </div>
-
+                        </div>
+                        <div class="col-lg-3">
                             <!-- Stock Summary Box -->
                             <div class="card bg-light-subtle border-0 mb-3">
                                 <div class="card-body text-center">
@@ -122,9 +120,8 @@ echo \app\widgets\Modal::widget([
                                 </div>
                             </div>
                         </div>
-
                         <!-- Right: Product Details -->
-                        <div class="col-lg-9">
+                        <div class="col-lg-6">
                             <!-- Product Information Table -->
                             <div class="table-responsive">
                                 <table class="table table-borderless table-sm">
@@ -162,6 +159,10 @@ echo \app\widgets\Modal::widget([
                                             <td><?= Html::encode(
                                               $model->serial,
                                             ) ?></td>
+                                        </tr>
+                                        <tr>
+                                            <td class="fw-semibold text-muted">Status</td>
+                                            <td> <?= $model->getStatusBadge() ?></td>
                                         </tr>
                                         <tr class="border-bottom">
                                             <td class="fw-semibold text-muted">Description</td>
@@ -216,7 +217,7 @@ echo \app\widgets\Modal::widget([
     </div>
 
     <!-- Transaction History -->
-    <div class="row mt-4">
+    <div class="row">
         <div class="col-12">
             <div class="card">
                 <div class="card-header border-bottom-dashed d-flex justify-content-between align-items-center py-3">
