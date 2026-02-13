@@ -268,6 +268,7 @@ echo \app\widgets\Modal::widget([
                         <div class="serial-container">
                           <div class="input-group mb-1 serial-item">
                             <input type="text" class="form-control serial-input" placeholder="Enter Serial...">
+                            <button type="button" class="btn btn-outline-info btn-sm generate-serial-sku" title="Generate Serial"><i class="ri-shuffle-line"></i></button>
                             <button type="button" class="btn btn-outline-danger btn-sm remove-serial" style="display:none;"><i class="ri-close-line"></i></button>
                           </div>
                         </div>
@@ -364,6 +365,48 @@ echo \app\widgets\Modal::widget([
         </div>
         <?php
         $js = <<<JS
+// Generate serial in format: 3 digits + 3 uppercase letters + 1 digit + 3 uppercase letters
+function generateSerialCode() {
+    const digits = '0123456789';
+    const letters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+    
+    let serial = '';
+    for (let i = 0; i < 3; i++) serial += digits.charAt(Math.floor(Math.random() * digits.length));
+    for (let i = 0; i < 3; i++) serial += letters.charAt(Math.floor(Math.random() * letters.length));
+    serial += digits.charAt(Math.floor(Math.random() * digits.length));
+    for (let i = 0; i < 3; i++) serial += letters.charAt(Math.floor(Math.random() * letters.length));
+    
+    return serial;
+}
+
+// Generate serial with SKU + timestamp (YYMMDDHHMMSS)
+function generateSerialWithSKU(sku) {
+    const now = new Date();
+    const yy = String(now.getFullYear()).slice(-2);
+    const mm = String(now.getMonth() + 1).padStart(2, '0');
+    const dd = String(now.getDate()).padStart(2, '0');
+    const hh = String(now.getHours()).padStart(2, '0');
+    const min = String(now.getMinutes()).padStart(2, '0');
+    const ss = String(now.getSeconds()).padStart(2, '0');
+    
+    return sku + yy + mm + dd + hh + min + ss;
+}
+
+$(document).on('click', '.generate-serial', function() {
+    const row = $(this).closest('tr');
+    const input = $(this).closest('.serial-item').find('.serial-input');
+    input.val(generateSerialCode()).trigger('input');
+    updateQtyFromSerials(row);
+});
+
+$(document).on('click', '.generate-serial-sku', function() {
+    const row = $(this).closest('tr');
+    const input = $(this).closest('.serial-item').find('.serial-input');
+    const sku = "$model->sku"; // Get SKU from product model
+    input.val(generateSerialWithSKU(sku)).trigger('input');
+    updateQtyFromSerials(row);
+});
+
 function calculateTotals() {
     let subTotal = 0;
     let totalDiscount = 0;
