@@ -19,14 +19,26 @@ class ProductBrandController extends Controller
    */
   public function behaviors()
   {
-    return array_merge(parent::behaviors(), [
-      'verbs' => [
-        'class' => VerbFilter::class,
-        'actions' => [
-          'delete' => ['POST'],
+    return array_merge(
+      parent::behaviors(),
+      [
+        'access' => [
+          'class' => \yii\filters\AccessControl::class,
+          'rules' => [
+            [
+              'actions' => \app\models\User::getUserPermission(Yii::$app->controller->id),
+              'allow' => true,
+            ]
+          ],
         ],
-      ],
-    ]);
+        'verbs' => [
+          'class' => VerbFilter::class,
+          'actions' => [
+            'delete' => ['POST'],
+          ],
+        ],
+      ]
+    );
   }
 
   /**
@@ -137,5 +149,58 @@ class ProductBrandController extends Controller
     }
 
     throw new NotFoundHttpException('The requested page does not exist.');
+  }
+
+  public function actionImportCsv()
+  {
+    // Handle POST request (file upload)
+    if (Yii::$app->request->isPost) {
+      $file = \yii\web\UploadedFile::getInstanceByName('csv_file');
+
+      if (!$file) {
+        Yii::$app->session->setFlash('error', 'No file uploaded');
+        return $this->redirect(Yii::$app->request->referrer);
+      }
+
+      if ($file->extension !== 'csv') {
+        Yii::$app->session->setFlash('error', 'Only CSV files are allowed');
+        return $this->redirect(Yii::$app->request->referrer);
+      }
+
+      try {
+        $count = 0;
+        if (($handle = fopen($file->tempName, 'r')) !== false) {
+          fgetcsv($handle); // Skip header
+          while (($row = fgetcsv($handle)) !== false) {
+            $brand = new ProductBrand();
+            $brand->name = $row[0] ?? '';
+            if ($brand->save()) {
+              $count++;
+            }
+          }
+          fclose($handle);
+        }
+
+        try {
+          Yii::$app->utils::insertActivityLog([
+            'params' => [
+              'file' => $file->name,
+              'count' => $count,
+            ],
+          ]);
+        } catch (\Throwable $e) {
+          // do not block request on logging failure
+        }
+
+        Yii::$app->session->setFlash('success', "Successfully imported $count brands");
+        return $this->redirect(Yii::$app->request->referrer);
+      } catch (\Exception $e) {
+        Yii::$app->session->setFlash('error', $e->getMessage());
+        return $this->redirect(Yii::$app->request->referrer);
+      }
+    }
+
+    // Render form for GET request
+    return $this->renderAjax('_import');
   }
 }

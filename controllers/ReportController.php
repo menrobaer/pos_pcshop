@@ -12,11 +12,37 @@ use DatePeriod;
 use DateTime;
 use Yii;
 use yii\db\Expression;
+use yii\filters\VerbFilter;
 use yii\helpers\ArrayHelper;
 use yii\web\Controller;
 
 class ReportController extends Controller
 {
+
+  public function behaviors()
+  {
+    return array_merge(
+      parent::behaviors(),
+      [
+        'access' => [
+          'class' => \yii\filters\AccessControl::class,
+          'rules' => [
+            [
+              'actions' => \app\models\User::getUserPermission(Yii::$app->controller->id),
+              'allow' => true,
+            ]
+          ],
+        ],
+        'verbs' => [
+          'class' => VerbFilter::class,
+          'actions' => [
+            'delete' => ['POST'],
+          ],
+        ],
+      ]
+    );
+  }
+
   public function actionFinancial()
   {
     $dateRange = Yii::$app->request->get('date_range');
@@ -264,8 +290,8 @@ class ReportController extends Controller
     $display =
       $input ?:
       date('d M, Y', strtotime($start)) .
-        ' to ' .
-        date('d M, Y', strtotime($end));
+      ' to ' .
+      date('d M, Y', strtotime($end));
 
     return [
       'start' => $start,
