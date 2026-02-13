@@ -539,6 +539,18 @@ $(document).on('input change', '.qty, .full-price, .discount, .cost-calc', funct
     calculateTotals();
 });
 
+// Make table rows clickable to navigate to product view
+$(document).on('click', 'tbody tr', function(e) {
+    if ($(e.target).closest('input, button, .remove-serial, .serial-input, .generate-serial, .generate-serial-sku').length) {
+        return;
+    }
+    
+    const productId = $(this).find('input[name*="product_id"]').val();
+    if (productId) {
+        window.location.href = '<?= Url::to(['product/view']) ?>' + '?id=' + productId;
+    }
+});
+
 calculateTotals();
 JS;
         $this->registerJs($js);
