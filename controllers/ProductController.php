@@ -5,6 +5,7 @@ namespace app\controllers;
 use app\models\Product;
 use app\models\ProductBrand;
 use app\models\ProductCategory;
+use app\models\ProductModel;
 use app\models\ProductSearch;
 use Exception;
 use Yii;
@@ -49,6 +50,17 @@ class ProductController extends Controller
   {
     return ArrayHelper::map(
       ProductBrand::find()
+        ->orderBy(['name' => SORT_ASC])
+        ->all(),
+      'id',
+      'name',
+    );
+  }
+
+    protected function getModels()
+  {
+    return ArrayHelper::map(
+      ProductModel::find()
         ->orderBy(['name' => SORT_ASC])
         ->all(),
       'id',
@@ -130,6 +142,7 @@ class ProductController extends Controller
       } catch (Exception $ex) {
         Yii::$app->session->setFlash('warning', $ex->getMessage());
         $transaction_exception->rollBack();
+        print_r($ex->getMessage());
         exit();
         return $this->redirect(Yii::$app->request->referrer);
       }
@@ -139,6 +152,7 @@ class ProductController extends Controller
       'model' => $model,
       'categories' => $this->getCategories(),
       'brands' => $this->getBrands(),
+      'models' => $this->getModels(),
     ]);
   }
 
@@ -195,6 +209,7 @@ class ProductController extends Controller
       'model' => $model,
       'categories' => $this->getCategories(),
       'brands' => $this->getBrands(),
+      'models' => $this->getModels(),
     ]);
   }
 

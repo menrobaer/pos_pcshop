@@ -43,6 +43,12 @@ use yii\widgets\ActiveForm;
         'prompt' => 'Select Brand',
       ]) ?>
     </div>
+     <div class="col-lg-6">
+      <?= $form->field($model, 'model_id')->dropDownList($models, [
+        'class' => 'has-select2',
+        'prompt' => 'Select Model',
+      ]) ?>
+    </div>
   </div>
   <div class="row">
     <div class="col-lg-6">

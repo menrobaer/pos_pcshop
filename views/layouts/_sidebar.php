@@ -53,19 +53,49 @@ $action = Yii::$app->controller->action->id;
             <i class="ri-dashboard-2-line"></i> <span>Dashboard</span>
           </a>
         </li>
+        <?php $isProduct = in_array($controller, ['product', 'product-category', 'product-brand', 'product-model']); ?>
         <li class="nav-item">
-          <a class="nav-link menu-link <?= $controller == 'product'
+          <a class="nav-link menu-link <?= $isProduct
             ? 'active'
-            : '' ?>" href="<?= Url::to(['product/index']) ?>">
+            : '' ?>" href="#sidebarProducts" data-bs-toggle="collapse" role="button" aria-expanded="<?= $isProduct
+  ? 'true'
+  : 'false' ?>" aria-controls="sidebarProducts">
             <i class="ri-apps-2-line"></i> <span>Products</span>
           </a>
-        </li>
-        <li class="nav-item">
-          <a class="nav-link menu-link <?= $controller == 'quotation'
-            ? 'active'
-            : '' ?>" href="<?= Url::to(['quotation/index']) ?>">
-            <i class="ri-file-list-3-line"></i> <span>Quotations</span>
-          </a>
+          <div class="collapse menu-dropdown <?= $isProduct
+            ? 'show'
+            : '' ?>" id="sidebarProducts">
+            <ul class="nav nav-sm flex-column">
+              <li class="nav-item">
+                <a href="<?= Url::to([
+                  'product/index',
+                ]) ?>" class="nav-link <?= $controller == 'product'
+  ? 'active'
+  : '' ?>">Product List</a>
+              </li>
+              <li class="nav-item">
+                <a href="<?= Url::to([
+                  'product-model/index',
+                ]) ?>" class="nav-link <?= $controller == 'product-model'
+  ? 'active'
+  : '' ?>">Product Model</a>
+              </li>
+              <li class="nav-item">
+                <a href="<?= Url::to([
+                  'product-category/index',
+                ]) ?>" class="nav-link <?= $controller == 'product-category'
+  ? 'active'
+  : '' ?>">Product Category</a>
+              </li>
+              <li class="nav-item">
+                <a href="<?= Url::to([
+                  'product-brand/index',
+                ]) ?>" class="nav-link <?= $controller == 'product-brand'
+  ? 'active'
+  : '' ?>">Product Brand</a>
+              </li>
+            </ul>
+          </div>
         </li>
         <li class="nav-item">
           <a class="nav-link menu-link <?= $controller == 'invoice'
@@ -167,8 +197,6 @@ $action == 'inventory'
           </div>
         </li>
         <?php $isSetting = in_array($controller, [
-          'product-category',
-          'product-brand',
           'user',
           'user-permission',
           'outlet',
@@ -185,20 +213,6 @@ $action == 'inventory'
             ? 'show'
             : '' ?>" id="sidebarSettings">
             <ul class="nav nav-sm flex-column">
-              <li class="nav-item">
-                <a href="<?= Url::to([
-                  'product-category/index',
-                ]) ?>" class="nav-link <?= $controller == 'product-category'
-  ? 'active'
-  : '' ?>">Product Category</a>
-              </li>
-              <li class="nav-item">
-                <a href="<?= Url::to([
-                  'product-brand/index',
-                ]) ?>" class="nav-link <?= $controller == 'product-brand'
-  ? 'active'
-  : '' ?>">Product Brand</a>
-              </li>
               <li class="nav-item">
                 <a href="<?= Url::to([
                   'user/index',

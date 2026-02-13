@@ -14,6 +14,7 @@ use Yii;
  * @property string $serial
  * @property int $brand_id
  * @property int $category_id
+ * @property int $model_id
  * @property string $description
  * @property float $cost
  * @property float $price
@@ -50,11 +51,12 @@ class Product extends \yii\db\ActiveRecord
   public function rules()
   {
     return [
-      [['name', 'brand_id', 'category_id', 'created_at'], 'required'],
+      [['name', 'brand_id', 'category_id', 'created_at','cost','price'], 'required'],
       [
         [
           'brand_id',
           'category_id',
+          'model_id',
           'status',
           'created_by',
           'updated_by',
@@ -67,7 +69,8 @@ class Product extends \yii\db\ActiveRecord
       [['created_at', 'updated_at'], 'safe'],
       [['image'], 'string', 'max' => 255],
       [['name'], 'string', 'max' => 100],
-      [['sku', 'serial'], 'string', 'max' => 50],
+      [['sku'], 'string', 'max' => 50],
+      [['serial'], 'string', 'max' => 1000],
       [
         ['imageFile'],
         'image',
@@ -91,6 +94,7 @@ class Product extends \yii\db\ActiveRecord
       'serial' => 'Serial',
       'brand_id' => 'Brand',
       'category_id' => 'Category',
+      'model_id' => 'Model',
       'description' => 'Description',
       'cost' => 'Cost',
       'price' => 'Price',
