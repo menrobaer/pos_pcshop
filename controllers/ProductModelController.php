@@ -19,14 +19,26 @@ class ProductModelController extends Controller
    */
   public function behaviors()
   {
-    return array_merge(parent::behaviors(), [
-      'verbs' => [
-        'class' => VerbFilter::class,
-        'actions' => [
-          'delete' => ['POST'],
+    return array_merge(
+      parent::behaviors(),
+      [
+        'access' => [
+          'class' => \yii\filters\AccessControl::class,
+          'rules' => [
+            [
+              'actions' => \app\models\User::getUserPermission(Yii::$app->controller->id),
+              'allow' => true,
+            ]
+          ],
         ],
-      ],
-    ]);
+        'verbs' => [
+          'class' => VerbFilter::class,
+          'actions' => [
+            'delete' => ['POST'],
+          ],
+        ],
+      ]
+    );
   }
 
   /**

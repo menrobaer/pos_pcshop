@@ -57,4 +57,4 @@ $(document).on('focus click', '#searchBrandList', function() {
 });
 JS;
 $this->registerJs($js);
- ?>
+?>

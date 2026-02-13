@@ -230,4 +230,26 @@ class User extends \yii\db\ActiveRecord implements IdentityInterface
     }
     return false;
   }
+
+
+  public static function getUserPermission($controller)
+  {
+    $permission = UserRolePermission::find()
+      ->select('user_role_action.action')
+      ->innerJoin('user_role_action', 'user_role_action.id = user_role_permission.action_id')
+      ->innerJoin('user_role', 'user_role.id = user_role_permission.user_role_id')
+      ->where(['user_role.id' => Yii::$app->user->identity->role_id])
+      ->andWhere(['user_role_action.controller' => $controller])
+      ->asArray()
+      ->all();
+    $array = ['get-product', 'product-search', 'ajax-request', 'clear-filter', 'export-csv'];
+    foreach ($permission as $row) {
+      $extra_actions =  explode(",", $row["action"]);
+      foreach ($extra_actions as $ex) {
+        array_push($array, $ex);
+      }
+    }
+
+    return $array;
+  }
 }
