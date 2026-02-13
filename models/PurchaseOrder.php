@@ -99,7 +99,7 @@ class PurchaseOrder extends \yii\db\ActiveRecord
       'quotation_id' => 'Quotation',
       'code' => 'Code',
       'serial_code' => 'Serial Code',
-      'supplier_id' => 'Customer',
+      'supplier_id' => 'Supplier',
       'date' => 'Date',
       'due_date' => 'Due Date',
       'remark' => 'Remark',
