@@ -41,7 +41,7 @@ class PurchaseOrderItem extends ActiveRecord
       [['full_price', 'price', 'discount'], 'number'],
       [['quantity'], 'default', 'value' => 1],
       [['full_price', 'price', 'discount'], 'default', 'value' => 0.00],
-      [['serial'], 'string', 'max' => 50],
+      [['serial'], 'string', 'max' => 1000],
       [['discount_type'], 'string', 'max' => 10],
       [['product_id'], 'exist', 'skipOnError' => true, 'targetClass' => Product::class, 'targetAttribute' => ['product_id' => 'id']],
       [['purchase_order_id'], 'exist', 'skipOnError' => true, 'targetClass' => PurchaseOrder::class, 'targetAttribute' => ['purchase_order_id' => 'id']],

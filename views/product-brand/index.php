@@ -16,11 +16,6 @@ echo \app\widgets\Modal::widget([
   'id' => 'modal-product-brand',
   'size' => 'modal-md',
 ]);
-
-echo \app\widgets\Modal::widget([
-  'id' => 'modal-import-csv',
-  'size' => 'modal-md',
-]);
 ?>
 <div class="product-brand-index">
   <?php Pjax::begin(['id' => 'product-brand-pjax-container']); ?>

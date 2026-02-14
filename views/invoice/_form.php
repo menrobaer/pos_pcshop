@@ -119,7 +119,7 @@ $items = $items ?? $model->items;
                                             $item->cost,
                                             [
                                                 'class' => 'form-control cost',
-                                                'readonly' => true,
+                                                'type' => 'number',
                                             ],
                                         ) ?></td>
                                     <td><?= Html::textInput(
@@ -351,7 +351,7 @@ $('#add-item').on('click', function() {
                 </div>
             </td>
             <td><input type="text" name="InvoiceItem[\${itemIndex}][serial]" class="form-control serial" readonly></td>
-            <td><input type="text" name="InvoiceItem[\${itemIndex}][cost]" class="form-control cost" readonly></td>
+            <td><input type="number" name="InvoiceItem[\${itemIndex}][cost]" class="form-control cost"></td>
             <td><input type="number" name="InvoiceItem[\${itemIndex}][quantity]" class="form-control qty" value="1"></td>
             <td><input type="number" name="InvoiceItem[\${itemIndex}][full_price]" class="form-control full-price" step="0.01">
                 <input type="hidden" name="InvoiceItem[\${itemIndex}][price]" class="price">
