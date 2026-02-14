@@ -157,23 +157,6 @@ echo \app\widgets\Modal::widget([
                 ]);
               },
               'delete' => function ($url, $model) {
-                // Check if product has inventory records
-                $inventoryCount = $model->getInventories()->count();
-
-                if ($inventoryCount > 0) {
-                  // Disabled delete button
-                  return Html::button(
-                    '<i class="ri ri-delete-bin-2-line"></i>',
-                    [
-                      'class' => 'btn btn-sm btn-outline-danger disabled',
-                      'title' =>
-                      'Cannot delete: Product is used in ' .
-                        $inventoryCount .
-                        ' transaction(s)',
-                      'data-bs-toggle' => 'tooltip',
-                    ],
-                  );
-                }
                 return Html::a(
                   '<i class="ri ri-delete-bin-2-line"></i>',
                   $url,

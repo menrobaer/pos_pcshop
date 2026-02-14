@@ -14,6 +14,7 @@ use yii\db\Expression;
  * @property int $id
  * @property int $product_id
  * @property string $serial
+ * @property float $cost
  * @property string|null $created_at
  * @property int|null $created_by
  * @property string|null $updated_at
@@ -63,6 +64,7 @@ class ProductVariation extends ActiveRecord
             [['product_id', 'created_by', 'updated_by'], 'integer'],
             [['created_at', 'updated_at'], 'safe'],
             [['serial'], 'string', 'max' => 50],
+            [['cost'], 'number'],
             [['serial'], 'unique'], // Serials must be unique in a POS system
             [['product_id'], 'exist', 'skipOnError' => true, 'targetClass' => Product::class, 'targetAttribute' => ['product_id' => 'id']],
         ];
@@ -81,6 +83,7 @@ class ProductVariation extends ActiveRecord
             'created_by' => 'Created By',
             'updated_at' => 'Updated At',
             'updated_by' => 'Updated By',
+            'cost' => 'Cost',
         ];
     }
 

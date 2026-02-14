@@ -68,6 +68,7 @@ class InvoiceSearch extends Invoice
   {
     $query = Invoice::find();
     $query->andWhere(['!=', 'status', Invoice::STATUS_DELETED]);
+    $query->joinWith('items');
 
     // add conditions that should always apply here
 
@@ -115,6 +116,7 @@ class InvoiceSearch extends Invoice
       'or',
       ['like', 'code', $this->globalSearch],
       ['like', 'serial_code', $this->globalSearch],
+      ['like', 'invoice_item.serial', $this->globalSearch],
     ]);
 
     return $dataProvider;

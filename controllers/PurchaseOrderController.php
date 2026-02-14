@@ -238,6 +238,7 @@ class PurchaseOrderController extends Controller
                   if ($s) {
                     $variation = new \app\models\ProductVariation();
                     $variation->product_id = $item->product_id;
+                    $variation->cost = $item->price;
                     $variation->serial = $s;
                     // Ignore if serial already exists or fails to save to prevent blocking the whole PO
                     if (!$variation->save()) {
@@ -472,6 +473,20 @@ class PurchaseOrderController extends Controller
           Inventory::TYPE_PURCHASE_ORDER,
           'out',
         );
+
+        // Remove serials from product variation
+        if (!empty($item->serial)) {
+          $serials = explode(',', $item->serial);
+          foreach ($serials as $s) {
+            $s = trim($s);
+            if ($s) {
+              \app\models\ProductVariation::deleteAll([
+                'product_id' => $item->product_id,
+                'serial' => $s,
+              ]);
+            }
+          }
+        }
       }
 
       PurchaseOrderItem::deleteAll(['purchase_order_id' => $model->id]);
@@ -570,6 +585,20 @@ class PurchaseOrderController extends Controller
         Inventory::TYPE_PURCHASE_ORDER,
         'out',
       );
+
+      // Remove serials from product variation
+      if (!empty($item->serial)) {
+        $serials = explode(',', $item->serial);
+        foreach ($serials as $s) {
+          $s = trim($s);
+          if ($s) {
+            \app\models\ProductVariation::deleteAll([
+              'product_id' => $item->product_id,
+              'serial' => $s,
+            ]);
+          }
+        }
+      }
     }
 
     $model->status = PurchaseOrder::STATUS_CANCELLED;

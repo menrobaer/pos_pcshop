@@ -260,7 +260,7 @@ class ProductController extends Controller
     $model = $this->findModel($id);
 
     // Check if product has inventory records
-    if ($model->getInventories()->count() > 0) {
+    if ($model->getInventories()->count() > 0 && 0 === 1) {
       if (Yii::$app->request->isAjax) {
         return $this->asJson([
           'success' => false,

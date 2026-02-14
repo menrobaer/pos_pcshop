@@ -171,6 +171,20 @@ class Product extends \yii\db\ActiveRecord
     ]);
   }
 
+  public function getVariations()
+  {
+    return $this->hasMany(ProductVariation::class, ['product_id' => 'id']);
+  }
+
+  public function getTotalCostValue()
+  {
+    $totalCost = 0;
+    foreach ($this->variations as $variation) {
+      $totalCost += $variation->cost;
+    }
+    return $totalCost;
+  }
+
   public function getImagePath()
   {
     $placeholder = Yii::getAlias('@web') . Yii::$app->params['notFoundImage'];

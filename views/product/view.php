@@ -19,6 +19,9 @@ $this->params['breadcrumbs'][] = $this->title;
 $inventoryCount = $model->getInventories()->count();
 $isProductUsed = $inventoryCount > 0;
 
+/** @var app\components\Utils $utils */
+$utils = Yii::$app->utils;
+
 echo \app\widgets\Modal::widget([
   'id' => 'modal-product',
   'size' => 'modal-md',
@@ -108,13 +111,23 @@ echo \app\widgets\Modal::widget([
               </div>
 
               <!-- Stock Valuation Box -->
+              <div class="card bg-danger-subtle border-0">
+                <div class="card-body text-center">
+                  <h6 class="text-muted text-uppercase mb-2 fw-semibold">Cost Value</h6>
+                  <h3 class="fw-bold text-danger mb-0">
+                    <?= $utils->dollarFormat(
+                      $model->getTotalCostValue()
+                    ) ?>
+                  </h3>
+                  <small class="text-muted">@ Cost Price</small>
+                </div>
+              </div>
               <div class="card bg-info-subtle border-0">
                 <div class="card-body text-center">
-                  <h6 class="text-muted text-uppercase mb-2 fw-semibold">Stock Value</h6>
+                  <h6 class="text-muted text-uppercase mb-2 fw-semibold">Sale Value</h6>
                   <h3 class="fw-bold text-info mb-0">
-                    <?= Yii::$app->formatter->asCurrency(
+                    <?= $utils->dollarFormat(
                       $model->available * $model->price,
-                      'USD',
                     ) ?>
                   </h3>
                   <small class="text-muted">@ Sale Price</small>
@@ -364,6 +377,7 @@ echo \app\widgets\Modal::widget([
           <?php ActiveForm::end(); ?>
         </div>
         <?php
+        $productViewUrl = Url::to(['product/view']);
         $js = <<<JS
 // Generate serial in format: 3 digits + 3 uppercase letters + 1 digit + 3 uppercase letters
 function generateSerialCode() {
@@ -371,10 +385,20 @@ function generateSerialCode() {
     const letters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
     
     let serial = '';
-    for (let i = 0; i < 3; i++) serial += digits.charAt(Math.floor(Math.random() * digits.length));
-    for (let i = 0; i < 3; i++) serial += letters.charAt(Math.floor(Math.random() * letters.length));
-    serial += digits.charAt(Math.floor(Math.random() * digits.length));
-    for (let i = 0; i < 3; i++) serial += letters.charAt(Math.floor(Math.random() * letters.length));
+    let isUnique = false;
+    let attempts = 0;
+    
+    // Keep generating until we get a unique serial (max 10 attempts)
+    while (!isUnique && attempts < 10) {
+        serial = '';
+        for (let i = 0; i < 3; i++) serial += digits.charAt(Math.floor(Math.random() * digits.length));
+        for (let i = 0; i < 3; i++) serial += letters.charAt(Math.floor(Math.random() * letters.length));
+        serial += digits.charAt(Math.floor(Math.random() * digits.length));
+        for (let i = 0; i < 3; i++) serial += letters.charAt(Math.floor(Math.random() * letters.length));
+        
+        isUnique = isSerialUnique(serial);
+        attempts++;
+    }
     
     return serial;
 }
@@ -389,13 +413,25 @@ function generateSerialWithSKU(sku) {
     const min = String(now.getMinutes()).padStart(2, '0');
     const ss = String(now.getSeconds()).padStart(2, '0');
     
-    return sku + yy + mm + dd + hh + min + ss;
+    let serial = sku + yy + mm + dd + hh + min + ss;
+    
+    // If serial exists, add milliseconds for uniqueness
+    let attempts = 0;
+    while (!isSerialUnique(serial) && attempts < 10) {
+        const ms = String(now.getMilliseconds()).padStart(3, '0');
+        serial = sku + yy + mm + dd + hh + min + ss + ms.substring(0, 1 + attempts);
+        attempts++;
+    }
+    
+    return serial;
 }
 
 $(document).on('click', '.generate-serial', function() {
     const row = $(this).closest('tr');
     const input = $(this).closest('.serial-item').find('.serial-input');
-    input.val(generateSerialCode()).trigger('input');
+    const serial = generateSerialCode();
+    input.val(serial).trigger('input');
+    validateSerial(input);
     updateQtyFromSerials(row);
 });
 
@@ -403,7 +439,9 @@ $(document).on('click', '.generate-serial-sku', function() {
     const row = $(this).closest('tr');
     const input = $(this).closest('.serial-item').find('.serial-input');
     const sku = "$model->sku"; // Get SKU from product model
-    input.val(generateSerialWithSKU(sku)).trigger('input');
+    const serial = generateSerialWithSKU(sku);
+    input.val(serial).trigger('input');
+    validateSerial(input);
     updateQtyFromSerials(row);
 });
 
@@ -451,21 +489,71 @@ function calculateTotals() {
     $('#grand-total-input').val(grandTotal.toFixed(2));
 }
 
-// Prevent enter from submitting form
-$('#purchase-order-form').on('keyup keypress', function(e) {
-  var keyCode = e.keyCode || e.which;
-  if (keyCode === 13) {
-    if (!$(e.target).hasClass('serial-input')) {
-        e.preventDefault();
-        return false;
+// Check if serial already exists in form
+function isSerialUnique(serialValue, excludeElement = null) {
+    let isDuplicate = false;
+    $('#items-table .serial-input').each(function() {
+        if (excludeElement && $(this).is(excludeElement)) {
+            return true; // Skip current element
+        }
+        if ($(this).val().trim() === serialValue.trim() && serialValue.trim() !== '') {
+            isDuplicate = true;
+            return false; // Break loop
+        }
+    });
+    return !isDuplicate;
+}
+
+// Validate serial input
+function validateSerial(input) {
+    const serialValue = $(input).val().trim();
+    const container = $(input).closest('.serial-item');
+    
+    if (serialValue === '') {
+        container.find('.serial-error').remove();
+        return true;
     }
-  }
+    
+    if (!isSerialUnique(serialValue, input)) {
+        const errorMsg = '<i class="ri-alert-fill"></i> <strong>Duplicate!</strong> Serial "' + serialValue + '" is already used in this order. Please enter a different serial number.';
+        
+        if (!container.find('.serial-error').length) {
+            container.append('<small class="serial-error text-danger d-block mt-1">' + errorMsg + '</small>');
+        } else {
+            // Update error message with current serial value
+            container.find('.serial-error').html(errorMsg);
+        }
+        $(input).addClass('is-invalid');
+        // Select the text for easy correction
+        input.select();
+        input.focus();
+        return false;
+    } else {
+        container.find('.serial-error').remove();
+        $(input).removeClass('is-invalid');
+        return true;
+    }
+}
+document.getElementById('purchase-order-form').addEventListener('keydown', function(e) {
+    if (e.key === 'Enter' || e.keyCode === 13) {
+        // Allow Enter only in serial-input fields for adding new ones
+        if (!$(e.target).hasClass('serial-input')) {
+            e.preventDefault();
+            return false;
+        }
+    }
 });
 
 // Serial input logic
 $(document).on('keypress', '.serial-input', function(e) {
     if (e.which == 13) {
         e.preventDefault();
+        
+        // Validate serial before adding new row
+        if (!validateSerial(this)) {
+            return false;
+        }
+        
         let row = $(this).closest('tr');
         let container = $(this).closest('.serial-container');
         
@@ -492,34 +580,35 @@ $(document).on('click', '.remove-serial', function() {
 
 function updateQtyFromSerials(row) {
     let container = row.find('.serial-container');
-    let items = container.find('.serial-item');
     let qtyInput = row.find('.qty');
     
-    if (items.length > 1) {
-        qtyInput.val(items.length).attr('readonly', true);
+    // Count only non-empty serials
+    let filledSerials = [];
+    container.find('.serial-input').each(function() {
+        let v = $(this).val().trim();
+        if (v) filledSerials.push(v);
+    });
+    
+    let filledCount = filledSerials.length;
+    
+    if (filledCount > 1) {
+        qtyInput.val(filledCount).attr('readonly', true);
         container.find('.remove-serial').show();
     } else {
         qtyInput.removeAttr('readonly');
         container.find('.remove-serial').hide();
     }
     
-    // Update hidden serial field
-    let serials = [];
-    container.find('.serial-input').each(function() {
-        let v = $(this).val().trim();
-        if (v) serials.push(v);
-    });
-    row.find('.actual-serial').val(serials.join(', '));
+    // Update hidden serial field with only non-empty serials
+    row.find('.actual-serial').val(filledSerials.join(', '));
 }
 
-$(document).on('input change', '.serial-input', function() {
+$(document).on('input change blur', '.serial-input', function() {
+    validateSerial(this);
+    
     let row = $(this).closest('tr');
-    let serials = [];
-    row.find('.serial-input').each(function() {
-        let v = $(this).val().trim();
-        if (v) serials.push(v);
-    });
-    row.find('.actual-serial').val(serials.join(', '));
+    updateQtyFromSerials(row);
+    calculateTotals();
 });
 
 $(document).on('click', '.toggle-discount-type', function() {
@@ -547,7 +636,26 @@ $(document).on('click', 'tbody tr', function(e) {
     
     const productId = $(this).find('input[name*="product_id"]').val();
     if (productId) {
-        window.location.href = '<?= Url::to(['product/view']) ?>' + '?id=' + productId;
+        window.location.href = '$productViewUrl' + '?id=' + productId;
+    }
+});
+
+// Validate all serials before form submission
+$('#purchase-order-form').on('submit', function(e) {
+    let hasInvalidSerial = false;
+    
+    $('#items-table .serial-input').each(function() {
+        const serialValue = $(this).val().trim();
+        if (serialValue && !isSerialUnique(serialValue, this)) {
+            hasInvalidSerial = true;
+            validateSerial(this);
+        }
+    });
+    
+    if (hasInvalidSerial) {
+        e.preventDefault();
+        alert('Please fix duplicate serials before submitting');
+        return false;
     }
 });
 
@@ -578,7 +686,7 @@ JS;
                 'pagination' => ['pageSize' => 10],
               ]),
               'tableOptions' => [
-                'class' => 'table table-hover align-middle mb-0',
+                'class' => 'table table-hover table-striped align-middle mb-0',
               ],
               'layout' =>
               "{items}\n<div class='d-flex justify-content-center p-3 border-top'>{pager}</div>",
@@ -698,11 +806,12 @@ JS;
         </div>
         <div class="card-body">
           <div class="table-responsive">
-            <table class="table table-sm table-hover">
+            <table class="table table-sm table-striped table-hover">
               <thead class="bg-light">
                 <tr>
                   <th>Serial Number</th>
-                  <th class="text-end">Action</th>
+                  <th>Added At</th>
+                  <th class="text-end">Cost</th>
                 </tr>
               </thead>
               <tbody>
@@ -714,21 +823,14 @@ JS;
 
                 if (empty($variations)): ?>
                   <tr>
-                    <td colspan="2" class="text-center text-muted py-3">No serials found</td>
+                    <td colspan="3" class="text-center text-muted py-3">No serials found</td>
                   </tr>
                 <?php else: ?>
                   <?php foreach ($variations as $variation): ?>
                     <tr>
                       <td class="fw-medium"><?= Html::encode($variation->serial) ?></td>
-                      <td class="text-end">
-                        <?= Html::a('<i class="ri-delete-bin-line"></i>', ['delete-variation', 'id' => $variation->id], [
-                          'class' => 'btn btn-ghost-danger btn-sm p-0',
-                          'data' => [
-                            'confirm' => 'Are you sure you want to delete this serial?',
-                            'method' => 'post',
-                          ],
-                        ]) ?>
-                      </td>
+                      <td class="fw-medium text-muted"><?= $utils->dateTime($variation->created_at) ?></td>
+                      <td class="text-end fw-bold text-danger"><?= Html::encode(number_format($variation->cost, 2)) ?></td>
                     </tr>
                   <?php endforeach; ?>
                 <?php endif; ?>
