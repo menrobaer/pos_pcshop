@@ -452,8 +452,8 @@ class InvoiceController extends Controller
         }
       }
 
-      InvoiceItem::deleteAll(['invoice_id' => $model->id]);
-      $model->delete();
+      $model->status = Invoice::STATUS_DELETED;
+      $model->save(false, ['status']);
       $transaction->commit();
       try {
         Yii::$app->utils::insertActivityLog([
@@ -684,12 +684,12 @@ class InvoiceController extends Controller
 
   protected function getCustomers()
   {
-    return ArrayHelper::map(Customer::find()->all(), 'id', 'name');
+    return ArrayHelper::map(Customer::find()->andWhere(['!=', 'status', Customer::STATUS_DELETED])->all(), 'id', 'name');
   }
 
   protected function getProducts()
   {
-    return ArrayHelper::map(Product::find()->all(), 'id', 'name');
+    return ArrayHelper::map(Product::find()->andWhere(['!=', 'status', Product::STATUS_DELETED])->all(), 'id', 'name');
   }
 
   protected function generateCode()

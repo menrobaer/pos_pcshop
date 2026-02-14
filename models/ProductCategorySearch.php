@@ -36,6 +36,7 @@ class ProductCategorySearch extends ProductCategory
   public function search($params)
   {
     $query = ProductCategory::find();
+    $query->andWhere(['!=', 'status', ProductCategory::STATUS_DELETED]);
 
     $dataProvider = new ActiveDataProvider([
       'query' => $query,

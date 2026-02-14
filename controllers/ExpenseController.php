@@ -250,7 +250,8 @@ class ExpenseController extends Controller
     $transaction = Yii::$app->db->beginTransaction();
     try {
       ExpenseItem::deleteAll(['expense_id' => $model->id]);
-      $model->delete();
+      $model->status = Expense::STATUS_DELETED;
+      $model->save(false);
       $transaction->commit();
       try {
         Yii::$app->utils::insertActivityLog([

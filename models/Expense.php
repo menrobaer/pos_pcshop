@@ -42,7 +42,8 @@ class Expense extends \yii\db\ActiveRecord
   const STATUS_ACTIVE = 1,
     STATUS_PAID = 2,
     STATUS_PROCESS = 3,
-    STATUS_CANCELLED = 0;
+    STATUS_CANCELLED = 0,
+    STATUS_DELETED = 10;
 
   /**
    * {@inheritdoc}

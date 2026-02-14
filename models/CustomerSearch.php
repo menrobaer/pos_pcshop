@@ -41,6 +41,7 @@ class CustomerSearch extends Customer
   public function search($params)
   {
     $query = Customer::find();
+    $query->andWhere(['!=', 'status', Customer::STATUS_DELETED]);
 
     // add conditions that should always apply here
 

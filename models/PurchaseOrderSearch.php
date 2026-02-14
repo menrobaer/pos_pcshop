@@ -67,6 +67,7 @@ class PurchaseOrderSearch extends PurchaseOrder
   public function search($params)
   {
     $query = PurchaseOrder::find();
+    $query->andWhere(['!=', 'status', PurchaseOrder::STATUS_DELETED]);
 
     // add conditions that should always apply here
 

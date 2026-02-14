@@ -36,6 +36,7 @@ class ProductBrandSearch extends ProductBrand
   public function search($params)
   {
     $query = ProductBrand::find();
+    $query->andWhere(['!=', 'status', ProductBrand::STATUS_DELETED]);
 
     $dataProvider = new ActiveDataProvider([
       'query' => $query,

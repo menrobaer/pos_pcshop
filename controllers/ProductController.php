@@ -286,7 +286,8 @@ class ProductController extends Controller
       // do not block request on logging failure
     }
 
-    $model->delete();
+    $model->status = Product::STATUS_DELETED;
+    $model->save(false);
 
     if (Yii::$app->request->isAjax) {
       return $this->asJson([
@@ -328,7 +329,8 @@ class ProductController extends Controller
       // do not block request on logging failure
     }
 
-    $variation->delete();
+    $variation->status = ProductVariation::STATUS_DELETED;
+    $variation->save(false);
 
     Yii::$app->session->setFlash('success', 'Variation deleted successfully.');
     return $this->redirect(['view', 'id' => $productId]);

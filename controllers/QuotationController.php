@@ -273,7 +273,8 @@ class QuotationController extends Controller
     $transaction = Yii::$app->db->beginTransaction();
     try {
       QuotationItem::deleteAll(['quotation_id' => $model->id]);
-      $model->delete();
+      $model->status = Quotation::STATUS_DELETED;
+      $model->save(false);
       $transaction->commit();
       try {
         Yii::$app->utils::insertActivityLog([
@@ -421,7 +422,7 @@ class QuotationController extends Controller
 
   protected function getProducts()
   {
-    return ArrayHelper::map(Product::find()->all(), 'id', 'name');
+    return ArrayHelper::map(Product::find()->andWhere(['!=', 'status', Product::STATUS_DELETED])->all(), 'id', 'name');
   }
 
   protected function generateCode()

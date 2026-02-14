@@ -25,7 +25,8 @@ class ProductBrand extends ActiveRecord
    * {@inheritdoc}
    */
   const STATUS_ACTIVE = 1,
-    STATUS_INACTIVE = 0;
+    STATUS_INACTIVE = 0,
+    STATUS_DELETED = 10;
 
   public function init()
   {
@@ -88,6 +89,7 @@ class ProductBrand extends ActiveRecord
 
   public function isUsed()
   {
+    return false;
     return Product::find()->where(['brand_id' => $this->id])->exists();
   }
 

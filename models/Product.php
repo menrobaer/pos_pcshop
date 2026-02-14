@@ -38,7 +38,8 @@ class Product extends \yii\db\ActiveRecord
    * {@inheritdoc}
    */
   const STATUS_ACTIVE = 1,
-    STATUS_INACTIVE = 0;
+    STATUS_INACTIVE = 0,
+    STATUS_DELETED = 10;
   public $imageFile;
 
   public function init()
@@ -50,7 +51,7 @@ class Product extends \yii\db\ActiveRecord
   public function rules()
   {
     return [
-      [['name', 'brand_id', 'category_id', 'created_at','cost','price'], 'required'],
+      [['name', 'brand_id', 'category_id', 'created_at', 'cost', 'price'], 'required'],
       [
         [
           'brand_id',

@@ -49,6 +49,10 @@ class ProductVariation extends ActiveRecord
         ];
     }
 
+    const STATUS_ACTIVE = 1,
+        STATUS_INACTIVE = 0,
+        STATUS_DELETED = 10;
+
     /**
      * {@inheritdoc}
      */

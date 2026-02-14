@@ -132,7 +132,8 @@ class ProductModelController extends Controller
     } catch (\Throwable $e) {
       // do not block request on logging failure
     }
-    $model->delete();
+    $model->status = ProductModel::STATUS_DELETED;
+    $model->save(false);
 
     if (Yii::$app->request->isAjax) {
       return $this->asJson([

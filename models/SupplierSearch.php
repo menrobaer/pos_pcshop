@@ -41,6 +41,7 @@ class SupplierSearch extends Supplier
   public function search($params)
   {
     $query = Supplier::find();
+    $query->andWhere(['!=', 'status', Supplier::STATUS_DELETED]);
 
     // add conditions that should always apply here
 

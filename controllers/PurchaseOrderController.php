@@ -475,7 +475,8 @@ class PurchaseOrderController extends Controller
       }
 
       PurchaseOrderItem::deleteAll(['purchase_order_id' => $model->id]);
-      $model->delete();
+      $model->status = PurchaseOrder::STATUS_DELETED;
+      $model->save(false);
       $transaction->commit();
       try {
         Yii::$app->utils::insertActivityLog([

@@ -68,6 +68,7 @@ class QuotationSearch extends Quotation
   public function search($params)
   {
     $query = Quotation::find();
+    $query->andWhere(['!=', 'status', Quotation::STATUS_DELETED]);
 
     // add conditions that should always apply here
 

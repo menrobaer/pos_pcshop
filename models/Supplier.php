@@ -31,7 +31,8 @@ class Supplier extends \yii\db\ActiveRecord
    * {@inheritdoc}
    */
   const STATUS_ACTIVE = 1,
-    STATUS_INACTIVE = 0;
+    STATUS_INACTIVE = 0,
+    STATUS_DELETED = 10;
 
   public function init()
   {
@@ -68,8 +69,10 @@ class Supplier extends \yii\db\ActiveRecord
     ];
   }
 
-   public function isUsed(){
-    $po= PurchaseOrder::find()->where(['supplier_id' => $this->id])->exists();
+  public function isUsed()
+  {
+    return false;
+    $po = PurchaseOrder::find()->where(['supplier_id' => $this->id])->exists();
     $expense = Expense::find()->where(['supplier_id' => $this->id])->exists();
     return $po || $expense;
   }
