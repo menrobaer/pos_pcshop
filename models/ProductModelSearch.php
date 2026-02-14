@@ -36,6 +36,7 @@ class ProductModelSearch extends ProductModel
   public function search($params)
   {
     $query = ProductModel::find();
+    $query->andWhere(['!=', 'status', ProductModel::STATUS_DELETED]);
 
     $dataProvider = new ActiveDataProvider([
       'query' => $query,

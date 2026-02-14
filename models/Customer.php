@@ -31,7 +31,8 @@ class Customer extends \yii\db\ActiveRecord
    * {@inheritdoc}
    */
   const STATUS_ACTIVE = 1,
-    STATUS_INACTIVE = 0;
+    STATUS_INACTIVE = 0,
+    STATUS_DELETED = 10;
 
   public function init()
   {
@@ -68,7 +69,9 @@ class Customer extends \yii\db\ActiveRecord
     ];
   }
 
-  public function isUsed(){
+  public function isUsed()
+  {
+    return false;
     return Invoice::find()->where(['customer_id' => $this->id])->exists();
   }
 

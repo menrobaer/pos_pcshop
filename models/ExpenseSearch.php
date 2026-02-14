@@ -66,6 +66,7 @@ class ExpenseSearch extends Expense
   public function search($params)
   {
     $query = Expense::find();
+    $query->andWhere(['!=', 'status', Expense::STATUS_DELETED]);
 
     // add conditions that should always apply here
 

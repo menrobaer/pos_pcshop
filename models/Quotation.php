@@ -86,7 +86,7 @@ class Quotation extends \yii\db\ActiveRecord
         'operator' => '>=',
         'type' => 'date',
         'message' =>
-          '{attribute} must be greater than or equal to "{compareValueOrAttribute}".',
+        '{attribute} must be greater than or equal to "{compareValueOrAttribute}".',
       ],
     ];
   }
@@ -124,6 +124,7 @@ class Quotation extends \yii\db\ActiveRecord
   const STATUS_ACTIVE = 1;
   const STATUS_ACCEPTED = 2;
   const STATUS_CANCELLED = 3;
+  const STATUS_DELETED = 10;
 
   public static function getStatusList()
   {

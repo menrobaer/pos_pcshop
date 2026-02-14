@@ -59,6 +59,7 @@ class ProductSearch extends Product
   public function search($params)
   {
     $query = Product::find();
+    $query->where(['!=', 'status', Product::STATUS_DELETED]);
 
     // add conditions that should always apply here
 

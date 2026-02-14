@@ -67,6 +67,7 @@ class InvoiceSearch extends Invoice
   public function search($params)
   {
     $query = Invoice::find();
+    $query->andWhere(['!=', 'status', Invoice::STATUS_DELETED]);
 
     // add conditions that should always apply here
 
