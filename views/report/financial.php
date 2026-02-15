@@ -50,8 +50,8 @@ $utils = Yii::$app->utils;
         <p class="text-uppercase fw-medium text-muted mb-1">Total Revenue</p>
         <h4 class="fs-22 mb-1"><?= $utils->dollarFormat($totalRevenue) ?></h4>
         <p class="text-muted mb-0 small"><?= Html::encode(
-          $invoiceCount,
-        ) ?> invoices</p>
+                                            $invoiceCount,
+                                          ) ?> invoices</p>
       </div>
     </div>
   </div>
@@ -83,9 +83,16 @@ $utils = Yii::$app->utils;
     <div class="card">
       <div class="card-header d-flex align-items-center justify-content-between">
         <h5 class="mb-0">Daily Movement</h5>
-        <small class="text-muted">From <?= Html::encode(
-          explode(' to ', $dateRange)[0],
-        ) ?> to <?= Html::encode(explode(' to ', $dateRange)[1]) ?></small>
+        <small class="text-muted">
+          <?php
+          $parts = explode(' to ', $dateRange);
+          if (count($parts) === 2) {
+            echo 'From ' . Html::encode($parts[0]) . ' to ' . Html::encode($parts[1]);
+          } else {
+            echo Html::encode($dateRange);
+          }
+          ?>
+        </small>
       </div>
       <div class="card-body">
         <div class="table-responsive table-card">
@@ -127,8 +134,8 @@ $utils = Yii::$app->utils;
       <div class="card-header d-flex align-items-center justify-content-between">
         <h5 class="mb-0">Recent Invoices</h5>
         <a href="<?= Url::to([
-          'invoice/index',
-        ]) ?>" class="text-decoration-underline">All invoices</a>
+                    'invoice/index',
+                  ]) ?>" class="text-decoration-underline">All invoices</a>
       </div>
       <div class="card-body">
         <div class="table-responsive">
@@ -152,19 +159,19 @@ $utils = Yii::$app->utils;
                   <tr>
                     <td>
                       <a href="<?= Url::to([
-                        'invoice/view',
-                        'id' => $invoice->id,
-                      ]) ?>" class="link-primary fw-semibold">
+                                  'invoice/view',
+                                  'id' => $invoice->id,
+                                ]) ?>" class="link-primary fw-semibold">
                         <?= Html::encode($invoice->code) ?>
                       </a>
                     </td>
                     <td><?= Html::encode(
-                      $invoice->customer ? $invoice->customer->name : 'Walk-in',
-                    ) ?></td>
+                          $invoice->customer ? $invoice->customer->name : 'Walk-in',
+                        ) ?></td>
                     <td><?= $utils->date(
-                      $invoice->created_at,
-                      'php:d M, Y',
-                    ) ?></td>
+                          $invoice->created_at,
+                          'php:d M, Y',
+                        ) ?></td>
                     <td><?= $utils->dollarFormat($invoice->paid_amount) ?></td>
                     <td><?= $invoice->getStatusLabel() ?></td>
                   </tr>
@@ -181,8 +188,8 @@ $utils = Yii::$app->utils;
       <div class="card-header d-flex align-items-center justify-content-between">
         <h5 class="mb-0">Recent Expenses & Purchase Orders</h5>
         <a href="<?= Url::to([
-          'expense/index',
-        ]) ?>" class="text-decoration-underline">All expenses</a>
+                    'expense/index',
+                  ]) ?>" class="text-decoration-underline">All expenses</a>
       </div>
       <div class="card-body">
         <div class="table-responsive">
@@ -218,7 +225,7 @@ $utils = Yii::$app->utils;
                   $badgeClass = $isExpense
                     ? 'badge bg-secondary-subtle text-secondary'
                     : 'badge bg-primary-subtle text-primary';
-                  ?>
+                ?>
                   <tr>
                     <td>
                       <a href="<?= $link ?>" class="link-primary fw-semibold">
@@ -230,8 +237,8 @@ $utils = Yii::$app->utils;
                     <td><?= $utils->dollarFormat($model->grand_total) ?></td>
                     <td>
                       <span class="<?= $badgeClass ?>"><?= Html::encode(
-  $typeLabel,
-) ?></span>
+                                                          $typeLabel,
+                                                        ) ?></span>
                     </td>
                     <td><?= $model->getStatusLabel() ?></td>
                   </tr>
@@ -245,4 +252,3 @@ $utils = Yii::$app->utils;
     </div>
   </div>
 </div>
-

@@ -20,7 +20,7 @@ class ProductSearch extends Product
   {
     return [
       [
-        ['id', 'brand_id', 'category_id', 'status', 'created_by', 'updated_by'],
+        ['id', 'brand_id', 'model_id', 'category_id', 'status', 'created_by', 'updated_by'],
         'integer',
       ],
       [
@@ -61,6 +61,26 @@ class ProductSearch extends Product
     $query = Product::find();
     $query->where(['!=', 'status', Product::STATUS_DELETED]);
 
+    // Subquery to find products that have inventory transactions
+    $productsWithTransactions = (new \yii\db\Query())
+      ->select('product_id')
+      ->from('inventory')
+      ->groupBy('product_id');
+
+    // Show products if:
+    // 1. available > 0 (has stock), OR
+    // 2. available = 0 AND no inventory transactions (never sold/used)
+    // Hide products with: available = 0 AND has inventory transactions (sold out)
+    $query->andWhere([
+      'OR',
+      ['>', 'available', 0],
+      [
+        'AND',
+        ['available' => 0],
+        ['NOT IN', 'id', $productsWithTransactions],
+      ],
+    ]);
+
     // add conditions that should always apply here
 
     $dataProvider = new ActiveDataProvider([
@@ -80,6 +100,7 @@ class ProductSearch extends Product
     $query->andFilterWhere([
       'id' => $this->id,
       'brand_id' => $this->brand_id,
+      'model_id' => $this->model_id,
       'category_id' => $this->category_id,
       'cost' => $this->cost,
       'price' => $this->price,
