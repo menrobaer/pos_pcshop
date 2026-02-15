@@ -99,6 +99,7 @@ class ProductController extends Controller
       'dataProvider' => $dataProvider,
       'categories' => $this->getCategories(),
       'brands' => $this->getBrands(),
+      'models' => $this->getModels(),
     ]);
   }
 

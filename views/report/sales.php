@@ -71,11 +71,9 @@ $this->title = 'Sales Report';
   <div class="col-md-3">
     <div class="card card-height-100">
       <div class="card-body">
-        <p class="text-uppercase fw-medium text-muted mb-1">Average Ticket</p>
-        <h4 class="fs-22 mb-1"><?= Utils::dollarFormat(
-          $invoiceCount ? $totalSales / $invoiceCount : 0,
-        ) ?></h4>
-        <p class="text-muted mb-0 small">Sales per order</p>
+        <p class="text-uppercase fw-medium text-muted mb-1">Invoice Margins</p>
+        <h4 class="fs-22 mb-1"><?= Utils::dollarFormat($totalMargin) ?></h4>
+        <p class="text-muted mb-0 small">Sum of all invoices</p>
       </div>
     </div>
   </div>
@@ -107,8 +105,8 @@ $this->title = 'Sales Report';
                 <?php foreach ($topProducts as $product): ?>
                   <tr>
                     <td><?= Html::encode(
-                      $product['product_name'] ?: 'Unknown',
-                    ) ?></td>
+                          $product['product_name'] ?: 'Unknown',
+                        ) ?></td>
                     <td><?= Html::encode($product['quantity']) ?></td>
                     <td><?= Utils::dollarFormat($product['revenue']) ?></td>
                   </tr>
@@ -125,8 +123,8 @@ $this->title = 'Sales Report';
       <div class="card-header d-flex align-items-center justify-content-between">
         <h5 class="mb-0">Recent Sales</h5>
         <a href="<?= Url::to([
-          'invoice/index',
-        ]) ?>" class="text-decoration-underline">View all</a>
+                    'invoice/index',
+                  ]) ?>" class="text-decoration-underline">View all</a>
       </div>
       <div class="card-body">
         <div class="table-responsive">
@@ -148,15 +146,15 @@ $this->title = 'Sales Report';
                   <tr>
                     <td>
                       <a href="<?= Url::to([
-                        'invoice/view',
-                        'id' => $invoice->id,
-                      ]) ?>" class="link-primary fw-semibold">
+                                  'invoice/view',
+                                  'id' => $invoice->id,
+                                ]) ?>" class="link-primary fw-semibold">
                         <?= Html::encode($invoice->code) ?>
                       </a>
                     </td>
                     <td><?= Html::encode(
-                      $invoice->customer ? $invoice->customer->name : 'Walk-in',
-                    ) ?></td>
+                          $invoice->customer ? $invoice->customer->name : 'Walk-in',
+                        ) ?></td>
                     <td><?= Utils::dollarFormat($invoice->grand_total) ?></td>
                   </tr>
                 <?php endforeach; ?>
@@ -207,4 +205,3 @@ $this->title = 'Sales Report';
     </div>
   </div>
 </div>
-

@@ -161,6 +161,11 @@ class Product extends \yii\db\ActiveRecord
     return $this->hasOne(ProductCategory::class, ['id' => 'category_id']);
   }
 
+  public function getModel()
+  {
+    return $this->hasOne(ProductModel::class, ['id' => 'model_id']);
+  }
+
   /**
    * @return \yii\db\ActiveQuery
    */

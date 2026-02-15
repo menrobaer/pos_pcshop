@@ -47,13 +47,13 @@ echo \app\widgets\Modal::widget([
             </div>
           </div>
         </div>
-      </div>      
+      </div>
       <?= GridView::widget([
         'dataProvider' => $dataProvider,
         'tableOptions' => [
           'id' => 'table-customer-list',
           'class' =>
-            'table table-hover table-striped align-middle table-nowrap mb-0',
+          'table table-hover table-striped align-middle table-nowrap mb-0',
         ],
         'layout' => "
             <div class='table-responsive'>
@@ -79,7 +79,6 @@ echo \app\widgets\Modal::widget([
           ['class' => 'yii\grid\SerialColumn'],
           'name',
           'phone',
-          'address',
           [
             'attribute' => 'status',
             'format' => 'raw',
@@ -116,11 +115,11 @@ echo \app\widgets\Modal::widget([
                     [
                       'title' => 'Delete',
                       'class' =>
-                        'btn btn-sm btn-outline-danger disabled',
+                      'btn btn-sm btn-outline-danger disabled',
                       'data-bs-toggle' => 'tooltip',
                       'data-bs-placement' => 'top',
                       'data-bs-title' =>
-                        'This customer cannot be deleted because it is used in transactions.',
+                      'This customer cannot be deleted because it is used in transactions.',
                     ],
                   );
                 }
@@ -140,7 +139,7 @@ echo \app\widgets\Modal::widget([
           ],
         ],
       ]) ?>
-    
+
     </div>
   </div>
   <?php Pjax::end(); ?>

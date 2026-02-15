@@ -47,8 +47,8 @@ $utils = Yii::$app->utils;
         <p class="text-uppercase fw-medium text-muted mb-1">Total Revenue</p>
         <h4 class="fs-22 mb-1"><?= $utils->dollarFormat($totalRevenue) ?></h4>
         <p class="text-muted mb-0 small"><?= Html::encode(
-          $invoiceCount,
-        ) ?> invoices</p>
+                                            $invoiceCount,
+                                          ) ?> invoices</p>
       </div>
     </div>
   </div>
@@ -64,9 +64,9 @@ $utils = Yii::$app->utils;
   <div class="col-md-3">
     <div class="card card-height-100">
       <div class="card-body">
-        <p class="text-uppercase fw-medium text-muted mb-1">Average Invoice</p>
-        <h4 class="fs-22 mb-1"><?= $utils->dollarFormat($averageInvoice) ?></h4>
-        <p class="text-muted mb-0 small">Revenue per invoice</p>
+        <p class="text-uppercase fw-medium text-muted mb-1">Invoice Margins</p>
+        <h4 class="fs-22 mb-1"><?= $utils->dollarFormat($totalMargin) ?></h4>
+        <p class="text-muted mb-0 small">Sum of all invoice margins</p>
       </div>
     </div>
   </div>
@@ -108,16 +108,16 @@ $utils = Yii::$app->utils;
                 <?php foreach ($topCustomers as $customer): ?>
                   <tr>
                     <td><?= Html::encode(
-                      $customer['customer_name'] ?: 'Walk-in / Unknown',
-                    ) ?></td>
+                          $customer['customer_name'] ?: 'Walk-in / Unknown',
+                        ) ?></td>
                     <td><?= $utils->dollarFormat(
-                      $customer['total_revenue'],
-                    ) ?></td>
+                          $customer['total_revenue'],
+                        ) ?></td>
                     <td><?= Html::encode($customer['invoice_count']) ?></td>
                     <td><?= $utils->dollarFormat(
-                      $customer['total_revenue'] /
-                        max(1, $customer['invoice_count']),
-                    ) ?></td>
+                          $customer['total_revenue'] /
+                            max(1, $customer['invoice_count']),
+                        ) ?></td>
                   </tr>
                 <?php endforeach; ?>
               <?php endif; ?>
@@ -132,8 +132,8 @@ $utils = Yii::$app->utils;
       <div class="card-header d-flex align-items-center justify-content-between">
         <h5 class="mb-0">Recent Invoices</h5>
         <a href="<?= Url::to([
-          'invoice/index',
-        ]) ?>" class="text-decoration-underline">View all</a>
+                    'invoice/index',
+                  ]) ?>" class="text-decoration-underline">View all</a>
       </div>
       <div class="card-body">
         <div class="table-responsive">
@@ -155,15 +155,15 @@ $utils = Yii::$app->utils;
                   <tr>
                     <td>
                       <a href="<?= Url::to([
-                        'invoice/view',
-                        'id' => $invoice->id,
-                      ]) ?>" class="link-primary fw-semibold">
+                                  'invoice/view',
+                                  'id' => $invoice->id,
+                                ]) ?>" class="link-primary fw-semibold">
                         <?= Html::encode($invoice->code) ?>
                       </a>
                     </td>
                     <td><?= Html::encode(
-                      $invoice->customer ? $invoice->customer->name : 'Walk-in',
-                    ) ?></td>
+                          $invoice->customer ? $invoice->customer->name : 'Walk-in',
+                        ) ?></td>
                     <td><?= $utils->dollarFormat($invoice->paid_amount) ?></td>
                   </tr>
                 <?php endforeach; ?>
@@ -175,4 +175,3 @@ $utils = Yii::$app->utils;
     </div>
   </div>
 </div>
-

@@ -244,10 +244,12 @@ class InvoiceController extends Controller
           }
 
           $items = $this->request->post('InvoiceItem', []);
+          $costTotal = 0;
           foreach ($items as $itemData) {
             $item = new InvoiceItem();
             $item->invoice_id = $model->id;
             if ($item->load($itemData, '')) {
+              $costTotal += $item->cost * $item->quantity;
               if (!$item->save()) {
                 $errors = implode(
                   '<br>',
@@ -272,6 +274,10 @@ class InvoiceController extends Controller
                 ]);
               }
             }
+          }
+          $model->cost_total = $costTotal;
+          if (!$model->save()) {
+            throw new Exception('Failed to save Invoice cost.');
           }
 
           $transaction->commit();
@@ -366,10 +372,12 @@ class InvoiceController extends Controller
 
         InvoiceItem::deleteAll(['invoice_id' => $model->id]);
         $items = $this->request->post('InvoiceItem', []);
+        $costTotal = 0;
         foreach ($items as $itemData) {
           $item = new InvoiceItem();
           $item->invoice_id = $model->id;
           if ($item->load($itemData, '')) {
+            $costTotal += $item->cost * $item->quantity;
             if (!$item->save()) {
               $errors = implode(
                 '<br>',
@@ -394,6 +402,10 @@ class InvoiceController extends Controller
               ]);
             }
           }
+        }
+        $model->cost_total = $costTotal;
+        if (!$model->save()) {
+          throw new Exception('Failed to save Invoice cost.');
         }
 
         $transaction->commit();

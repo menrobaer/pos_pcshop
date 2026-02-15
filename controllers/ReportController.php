@@ -235,6 +235,13 @@ class ReportController extends Controller
       ->distinct()
       ->count();
 
+    // Total margins
+    $totalMargin =
+      (float) (\app\models\Invoice::find()
+        ->where(['between', 'invoice.created_at', $start, $end])
+        ->andWhere(['IN', 'invoice.status', $paidStatuses])
+        ->sum('grand_total - cost_total') ?? 0);
+
     $recentInvoices = Invoice::find()
       ->with('customer')
       ->where(['between', 'created_at', $start, $end])
@@ -268,6 +275,7 @@ class ReportController extends Controller
       'averageInvoice' => $invoiceCount ? $totalRevenue / $invoiceCount : 0,
       'topCustomers' => $topCustomers,
       'recentInvoices' => $recentInvoices,
+      'totalMargin' => $totalMargin,
     ]);
   }
 
@@ -382,7 +390,7 @@ class ReportController extends Controller
     $paidStatuses = [Invoice::STATUS_PAID, Invoice::STATUS_PROCESS];
 
     $totalSales = (float) Invoice::find()
-      ->where(['between', 'created_at', $start, $end])
+      ->where(['between', 'invoice.created_at', $start, $end])
       ->andWhere(['IN', 'status', $paidStatuses])
       ->sum('grand_total');
 
@@ -397,6 +405,13 @@ class ReportController extends Controller
       ->where(['between', 'invoice.created_at', $start, $end])
       ->andWhere(['IN', 'invoice.status', $paidStatuses])
       ->sum('invoice_item.quantity');
+
+    // Total margins
+    $totalMargin =
+      (float) (\app\models\Invoice::find()
+        ->where(['between', 'invoice.created_at', $start, $end])
+        ->andWhere(['IN', 'invoice.status', $paidStatuses])
+        ->sum('grand_total - cost_total') ?? 0);
 
     $dailySales = Invoice::find()
       ->select([
@@ -442,6 +457,7 @@ class ReportController extends Controller
       'dateRange' => $displayRange,
       'totalSales' => $totalSales,
       'invoiceCount' => $invoiceCount,
+      'totalMargin' => $totalMargin,
       'totalUnits' => $totalUnits,
       'dailySales' => $dailySales,
       'topProducts' => $topProducts,
