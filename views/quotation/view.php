@@ -23,7 +23,36 @@ foreach ($model->items as $it) {
 $totalSale = (float) $model->grand_total;
 $totalMargin = $totalSale - $totalCost;
 $marginPercent = $totalSale > 0 ? ($totalMargin / $totalSale) * 100 : 0;
+
+/** @var app\components\Utils $utils */
+$utils = Yii::$app->utils;
 ?>
+<style>
+  #barcode-container {
+    position: relative !important;
+    width: fit-content !important;
+    margin-left: auto !important;
+  }
+
+  #barcode-container>div:first-child {
+    display: flex !important;
+  }
+
+  #quotation-code {
+    background-color: #fff !important;
+    position: absolute !important;
+    top: 75% !important;
+    left: 50% !important;
+    transform: translateX(-50%) !important;
+    z-index: 10 !important;
+    white-space: nowrap !important;
+    padding: 2px 4px !important;
+  }
+
+  .quotation-title {
+    font-size: 18px !important;
+  }
+</style>
 <div class="quotation-view">
   <div class="row">
     <div class="col-xxl-9">
@@ -31,12 +60,7 @@ $marginPercent = $totalSale > 0 ? ($totalMargin / $totalSale) * 100 : 0;
         <div class="row">
           <div class="col-lg-12">
             <div class="card-header border-bottom-dashed p-4">
-              <div class="d-flex">
-                <div class="flex-grow-1">
-                  <div class="mb-3">
-                    <h3 class="fw-bold mb-0">សម្រង់តម្លៃ - QUOTATION</h3>
-                  </div>
-                </div>
+              <div class="d-flex justify-content-end">
                 <div class="flex-shrink-0 mt-sm-0 mt-3 text-end">
                   <div class="mb-4 d-print-none" data-html2canvas-ignore="true">
                     <?php if (
@@ -101,7 +125,7 @@ $marginPercent = $totalSale > 0 ? ($totalMargin / $totalSale) * 100 : 0;
                       </ul>
                     </div>
 
-                    <a href="javascript:window.print()" class="btn btn-soft-info btn-sm"><i class="ri-printer-line align-bottom me-1"></i> Print</a>
+                    <a href="javascript:void(0)" class="btn btn-soft-info btn-sm" id="btn-print-quotation"><i class="ri-printer-line align-bottom me-1"></i> Print</a>
                   </div>
                 </div>
               </div>
@@ -109,69 +133,27 @@ $marginPercent = $totalSale > 0 ? ($totalMargin / $totalSale) * 100 : 0;
             <!--end card-header-->
           </div><!--end col-->
           <div class="col-lg-12">
-            <div class="card-body p-4">
-              <div class="row g-3">
-                <div class="col-lg-3 col-6">
-                  <p class="text-muted mb-2 text-uppercase fw-semibold">Quotation No</p>
-                  <h5 class="fs-14 mb-0">#<span id="invoice-no"><?= Html::encode(
-                                                                  $model->code,
-                                                                ) ?></span></h5>
-                </div>
-                <!--end col-->
-                <div class="col-lg-3 col-6">
-                  <p class="text-muted mb-2 text-uppercase fw-semibold">Date</p>
-                  <h5 class="fs-14 mb-0"><span id="invoice-date"><?= date(
-                                                                    'd M, Y',
-                                                                    strtotime($model->date),
-                                                                  ) ?></span></h5>
-                </div>
-                <!--end col-->
-                <div class="col-lg-3 col-6">
-                  <p class="text-muted mb-2 text-uppercase fw-semibold">Status</p>
-                  <?= $model->getStatusBadge() ?>
-                </div>
-                <!--end col-->
-                <div class="col-lg-3 col-6">
-                  <p class="text-muted mb-2 text-uppercase fw-semibold">Total Amount</p>
-                  <h5 class="fs-14 mb-0">$<span id="total-amount"><?= number_format(
-                                                                    $model->grand_total,
-                                                                    2,
-                                                                  ) ?></span></h5>
-                </div>
-                <!--end col-->
-              </div>
-              <!--end row-->
-            </div>
-            <!--end card-body-->
-          </div><!--end col-->
-          <div class="col-lg-12">
             <div class="card-body p-4 border-top border-top-dashed">
               <div class="row g-3">
-                <div class="col-6">
-                  <h6 class="text-muted text-uppercase fw-semibold mb-3">Customer Details</h6>
-                  <p class="fw-bold mb-2 fs-15"><?= $model->customer
-                                                  ? Html::encode($model->customer->name)
-                                                  : '-' ?></p>
-                  <p class="text-muted mb-1"><?= $model->customer
-                                                ? Html::encode($model->customer->address)
-                                                : '-' ?></p>
-                  <p class="text-muted mb-0"><span>Phone: </span><?= $model->customer
-                                                                    ? Html::encode($model->customer->phone)
-                                                                    : '-' ?></p>
+                <div class="col-4">
+                  <p class="fw-bold mb-2">Bill To: <?= $model->customer ? Html::encode($model->customer->name) : '-' ?></p>
+                  <p class="text-muted mb-0"><span>Phone: </span><?= $model->customer ? Html::encode($model->customer->phone) : '-' ?></p>
+                  <p class="text-muted mb-1"><span>Address: </span><?= $model->customer ? Html::encode($model->customer->address) : '-' ?></p>
                 </div>
-                <!--end col-->
-                <div class="col-6 text-end">
-                  <h6 class="text-muted text-uppercase fw-semibold mb-3">Due Date</h6>
-                  <h5 class="fs-14 mb-0 text-danger"><?= date(
-                                                        'd M, Y',
-                                                        strtotime($model->due_date),
-                                                      ) ?></h5>
+                <div class="col-4">
+                  <div class="text-center">
+                    <h3 class="fw-bold mb-0 quotation-title">សម្រង់តម្លៃ<br>Quotation</h3>
+                  </div>
                 </div>
-                <!--end col-->
+                <div class="col-4 text-end">
+                  <div id="barcode-container" class="mb-3">
+                    <div><svg id="quotation-barcode"></svg></div>
+                    <div id="quotation-code"><?= $model->code ?></div>
+                  </div>
+                  <p class="mb-0"><span class="text-muted">Date:</span> <?= $utils->date($model->date) ?></p>
+                </div>
               </div>
-              <!--end row-->
             </div>
-            <!--end card-body-->
           </div><!--end col-->
           <div class="col-lg-12">
             <div class="card-body p-4">
@@ -180,18 +162,15 @@ $marginPercent = $totalSale > 0 ? ($totalMargin / $totalSale) * 100 : 0;
                   <thead>
                     <tr class="table-active">
                       <th scope="col" style="width: 50px;">#</th>
-                      <th scope="col" class="text-start" style="min-width: 280px;">Product Details</th>
-                      <th scope="col" style="min-width: 120px;">Serial</th>
-                      <th scope="col" style="min-width: 80px;">Price</th>
-                      <th scope="col" style="min-width: 80px;">Quantity</th>
-                      <th scope="col" class="text-end" style="min-width: 80px;">Amount</th>
+                      <th scope="col" style="width: 90px;">Image</th>
+                      <th scope="col" class="text-start" style="min-width: 250px;">Product Details</th>
+                      <th scope="col" style="min-width: 60px;">Price</th>
+                      <th scope="col" style="min-width: 50px;">Quantity</th>
+                      <th scope="col" class="text-end" style="min-width: 60px;">Amount</th>
                     </tr>
                   </thead>
                   <tbody>
-                    <?php foreach (
-                      $model->items
-                      as $index => $item
-                    ): ?>
+                    <?php foreach ($model->items as $index => $item): ?>
                       <tr>
                         <th scope="row"><?= str_pad(
                                           $index + 1,
@@ -199,95 +178,58 @@ $marginPercent = $totalSale > 0 ? ($totalMargin / $totalSale) * 100 : 0;
                                           '0',
                                           STR_PAD_LEFT,
                                         ) ?></th>
+                        <td class="text-center">
+                          <?php
+                          $product = $item->product;
+                          if ($product && $product->image): ?>
+                            <?= Html::img($product->getImagePath(), [
+                              'style' => 'max-width: 80px; max-height: 80px; object-fit: contain;',
+                              'alt' => $item->product_name,
+                              'class' => 'img-thumbnail',
+                            ]) ?>
+                          <?php else: ?>
+                            <span class="text-muted small">No Image</span>
+                          <?php endif; ?>
+                        </td>
                         <td class="text-start">
-                          <span class="fw-bold"><?= Html::encode(
-                                                  $item->product_name,
-                                                ) ?></span>
+                          <?= Html::a(
+                            Html::tag('span', Html::encode($item->product_name), ['class' => 'fw-bold']),
+                            ['product/view', 'id' => $item->product_id],
+                            ['class' => 'text-dark link-primary']
+                          ) ?>
                           <div class="d-flex align-items-center mt-2">
-                            <?php if (
-                              $item->product &&
-                              $item->product->image
-                            ): ?>
-                              <div class="flex-shrink-0 me-3">
-                                <?= Html::img(
-                                  $item->product->getImagePath(),
-                                  [
-                                    'class' =>
-                                    'avatar-sm rounded img-thumbnail',
-                                    'style' =>
-                                    'width: 60px; height: 60px; object-fit: contain;',
-                                  ],
-                                ) ?>
-                              </div>
-                            <?php endif; ?>
                             <div class="flex-grow-1">
-                              <?php if (
-                                $item->sku
-                              ): ?>
-                                <p class="text-muted mb-1"><span class="fw-medium">SKU:</span> <?= Html::encode(
-                                                                                                  $item->sku,
-                                                                                                ) ?></p>
+                              <?php if ($item->serial): ?>
+                                <p class="text-muted mb-1"><span class="fw-medium">Serial:</span> <?= Html::encode($item->serial) ?></p>
                               <?php endif; ?>
-                              <?php if (
-                                $item->description
-                              ): ?>
+                              <?php if ($item->sku): ?>
+                                <p class="text-muted mb-1"><span class="fw-medium">SKU:</span> <?= Html::encode($item->sku) ?></p>
+                              <?php endif; ?>
+                              <?php if ($item->description): ?>
                                 <p class="text-muted mb-0"><?= nl2br(
-                                                              Html::encode(
-                                                                $item->description,
-                                                              ),
+                                                              Html::encode($item->description),
                                                             ) ?></p>
                               <?php endif; ?>
                             </div>
                           </div>
                         </td>
-                        <td><?= Html::encode(
-                              $item->serial ?: '-',
-                            ) ?></td>
+                        <td class="d-none"><?= Html::encode($item->serial ?: '-') ?></td>
                         <td>
-                          $<?= number_format(
-                              $item->full_price,
-                              2,
-                            ) ?>
-                          <?php if (
-                            $item->discount > 0
-                          ): ?>
+                          $<?= number_format($item->price, 2) ?>
+                          <?php if ($item->discount > 0): ?>
                             <div class="text-danger small">
-                              - <?= $item->discount_type ===
-                                  'percentage'
-                                  ? number_format(
-                                    $item->discount,
-                                    0,
-                                  ) . '%'
-                                  : '$' .
-                                  number_format(
-                                    $item->discount,
-                                    2,
-                                  ) ?>
+                              - <?= $item->discount_type === 'percentage'
+                                  ? number_format($item->discount, 0) . '%'
+                                  : '$' . number_format($item->discount, 2) ?>
                             </div>
                           <?php endif; ?>
                         </td>
                         <td><?= $item->quantity ?></td>
                         <td class="text-end">
-                          <?php
-                          $lineGross =
-                            $item->quantity *
-                            $item->full_price;
-                          $lineNet =
-                            $item->quantity *
-                            $item->price;
-                          ?>
                           <div class="fw-bold">$<?= number_format(
-                                                  $lineNet,
+                                                  $item->quantity * $item->price,
                                                   2,
                                                 ) ?></div>
-                          <?php if (
-                            $lineGross > $lineNet
-                          ): ?>
-                            <div class="text-muted text-decoration-line-through small">$<?= number_format(
-                                                                                          $lineGross,
-                                                                                          2,
-                                                                                        ) ?></div>
-                          <?php endif; ?>
                         </td>
                       </tr>
                     <?php endforeach; ?>
@@ -425,6 +367,60 @@ $marginPercent = $totalSale > 0 ? ($totalMargin / $totalSale) * 100 : 0;
 </div>
 
 <?php
+// Register JsBarcode library
+$this->registerJsFile('https://cdn.jsdelivr.net/npm/jsbarcode@3.11.5/dist/JsBarcode.all.min.js', ['depends' => [\yii\web\JqueryAsset::class]]);
+
+// Register print styles
+$printCss = <<<CSS
+@media print {
+  body {
+    font-size: 11px;
+  }
+  
+  .quotation-view {
+    font-size: 11px;
+  }
+  
+  h1, h2, h3, h4, h5, h6 {
+    font-size: 12px;
+  }
+  
+  .quotation-title {
+    font-size: 18px !important;
+  }
+  
+  .card {
+    border: none;
+    page-break-inside: avoid;
+  }
+  
+  .table {
+    font-size: 10px;
+  }
+  
+  .table th, .table td {
+    padding: 0.25rem !important;
+  }
+  
+  .card-header, .card-body {
+    padding: 0.75rem !important;
+  }
+  
+  .btn, .btn-group {
+    display: none !important;
+  }
+  
+  .d-print-none {
+    display: none !important;
+  }
+  
+  p {
+    margin-bottom: 0.25rem;
+  }
+}
+CSS;
+$this->registerCss($printCss);
+
 $csrfParam = Yii::$app->request->csrfParam;
 $csrfToken = Yii::$app->request->csrfToken;
 $js = <<<JS
@@ -461,6 +457,36 @@ $(document).on('click', '.quotation-action', function (e) {
       submitPost(url);
     }
   });
+});
+
+// Print Quotation using current view
+$(document).ready(function() {
+  $('#btn-print-quotation').on('click', function () {
+    window.print();
+  });
+});
+
+// Generate barcode
+$(document).ready(function() {
+  if (typeof JsBarcode === 'undefined') {
+    console.warn('JsBarcode library not loaded');
+    return;
+  }
+  
+  var quotationCode = "$model->code";
+  if (quotationCode && quotationCode.trim()) {
+    try {
+      JsBarcode('#quotation-barcode', quotationCode, {
+        format: 'CODE128',
+        width: 1,
+        height: 20,
+        displayValue: false,
+        margin: 1
+      });
+    } catch(e) {
+      console.error('Barcode generation error:', e);
+    }
+  }
 });
 JS;
 $this->registerJs($js);
