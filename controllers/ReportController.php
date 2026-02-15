@@ -286,11 +286,19 @@ class ReportController extends Controller
     if ($input) {
       $parts = explode(' to ', $input);
       if (count($parts) === 2) {
+        // Range format: "start date to end date"
         $parsedStart = strtotime($parts[0]);
         $parsedEnd = strtotime($parts[1]);
         if ($parsedStart && $parsedEnd) {
           $start = date('Y-m-d', $parsedStart);
           $end = date('Y-m-d', $parsedEnd);
+        }
+      } else {
+        // Single day format: just one date
+        $parsedDate = strtotime($input);
+        if ($parsedDate) {
+          $start = date('Y-m-d', $parsedDate);
+          $end = date('Y-m-d', $parsedDate);
         }
       }
     }
