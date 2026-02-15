@@ -26,6 +26,8 @@ class m260210_051728_create_invoice_table extends Migration
         'code' => $this->string(50)->notNull(),
         'serial_code' => $this->string(50)->notNull(),
         'customer_id' => $this->integer()->notNull(),
+        'phone' => $this->string(50)->notNull(),
+        'address' => $this->string(50)->notNull(),
         'date' => $this->date()->notNull(),
         'due_date' => $this->date()->notNull(),
         'remark' => $this->text()->notNull(),

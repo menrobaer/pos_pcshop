@@ -5,9 +5,14 @@ use yii\helpers\Url;
 
 /** @var yii\web\View $this */
 /** @var app\models\Invoice $model */
+
 /** @var app\models\InvoicePayment $paymentModel */
 /** @var app\models\InvoicePayment[] $payments */
 /** @var array $paymentMethods */
+
+// Register JsBarcode library
+$this->registerJsFile('https://cdn.jsdelivr.net/npm/jsbarcode@3.11.5/dist/JsBarcode.all.min.js', ['depends' => [\yii\web\JqueryAsset::class]]);
+
 
 $this->title = 'Invoice Details: ' . $model->code;
 $this->params['breadcrumbs'][] = ['label' => 'Invoices', 'url' => ['index']];
@@ -27,6 +32,34 @@ $marginPercent = $totalSale > 0 ? ($totalMargin / $totalSale) * 100 : 0;
 /** @var app\components\Utils $utils */
 $utils = Yii::$app->utils;
 ?>
+<style>
+  .invoice-signature .col-3 {
+    margin-top: 2rem;
+    height: 4rem;
+    border-bottom: 1px solid #333;
+  }
+
+  #barcode-container {
+    position: relative !important;
+    width: fit-content !important;
+    margin-left: auto !important;
+  }
+
+  #barcode-container>div:first-child {
+    display: flex !important;
+  }
+
+  #invoice-code {
+    background-color: #fff !important;
+    position: absolute !important;
+    top: 50% !important;
+    left: 50% !important;
+    transform: translateX(-50%) !important;
+    z-index: 10 !important;
+    white-space: nowrap !important;
+    padding: 2px 4px !important;
+  }
+</style>
 <div class="invoice-view">
   <div class="row">
     <div class="col-xxl-9">
@@ -34,12 +67,7 @@ $utils = Yii::$app->utils;
         <div class="row">
           <div class="col-lg-12">
             <div class="card-header border-bottom-dashed p-4">
-              <div class="d-flex">
-                <div class="flex-grow-1">
-                  <div class="mb-3">
-                    <h3 class="fw-bold mb-0">វិក្កយបត្រ - Invoice</h3>
-                  </div>
-                </div>
+              <div class="d-flex justify-content-end">
                 <div class="flex-shrink-0 mt-sm-0 mt-3 text-end">
                   <div class="mb-4 d-print-none" data-html2canvas-ignore="true">
                     <?php if (
@@ -88,7 +116,7 @@ $utils = Yii::$app->utils;
                         </li>
                       </ul>
                     </div>
-                    <a href="javascript:window.print()" class="btn btn-soft-info btn-sm"><i class="ri-printer-line align-bottom me-1"></i> Print</a>
+                    <button type="button" id="btn-print-invoice" class="btn btn-soft-info btn-sm"><i class="ri-printer-line align-bottom me-1"></i> Print</button>
                   </div>
 
                 </div>
@@ -96,80 +124,41 @@ $utils = Yii::$app->utils;
             </div>
           </div>
           <div class="col-lg-12">
-            <div class="card-body p-4">
-              <div class="row g-3">
-                <div class="col-lg-3 col-6">
-                  <p class="text-muted mb-2 text-uppercase fw-semibold">Invoice No</p>
-                  <h5 class="fs-14 mb-0">#<span id="invoice-no"><?= Html::encode(
-                                                                  $model->code,
-                                                                ) ?></span></h5>
-                </div>
-                <div class="col-lg-3 col-6">
-                  <p class="text-muted mb-2 text-uppercase fw-semibold">Date</p>
-                  <h5 class="fs-14 mb-0"><span id="invoice-date"><?= date(
-                                                                    'd M, Y',
-                                                                    strtotime($model->date),
-                                                                  ) ?></span></h5>
-                </div>
-                <div class="col-lg-3 col-6">
-                  <p class="text-muted mb-2 text-uppercase fw-semibold">Due Date</p>
-                  <h5 class="fs-14 mb-0 text-danger"><?= date(
-                                                        'd M, Y',
-                                                        strtotime($model->due_date),
-                                                      ) ?></h5>
-                </div>
-                <div class="col-lg-3 col-6">
-                  <p class="text-muted mb-2 text-uppercase fw-semibold">Total Amount</p>
-                  <h5 class="fs-14 mb-0">$<span id="total-amount"><?= number_format(
-                                                                    $model->grand_total,
-                                                                    2,
-                                                                  ) ?></span></h5>
-                </div>
-              </div>
-            </div>
-          </div>
-          <div class="col-lg-12">
             <div class="card-body p-4 border-top border-top-dashed">
               <div class="row g-3">
-                <div class="col-6">
-                  <h6 class="text-muted text-uppercase fw-semibold mb-3">Customer Details</h6>
-                  <p class="fw-bold mb-2 fs-15"><?= $model->customer
-                                                  ? Html::encode($model->customer->name)
-                                                  : '-' ?></p>
-                  <p class="text-muted mb-1"><?= $model->customer
-                                                ? Html::encode($model->customer->address)
-                                                : '-' ?></p>
-                  <p class="text-muted mb-0"><span>Phone: </span><?= $model->customer
-                                                                    ? Html::encode($model->customer->phone)
-                                                                    : '-' ?></p>
+                <div class="col-4">
+                  <p class="fw-bold mb-2">Bill To: <?= $model->customer ? Html::encode($model->customer->name) : '-' ?></p>
+                  <p class="text-muted mb-0"><span>Phone: </span><?= $model->phone ? Html::encode($model->phone) : '-' ?></p>
+                  <p class="text-muted mb-1"><span>Address: </span><?= $model->address ? Html::encode($model->address) : '-' ?></p>
                 </div>
-                <div class="col-6 text-end">
-                  <h6 class="text-muted text-uppercase fw-semibold mb-3">Invoice Summary</h6>
-                  <p class="mb-1"><span class="text-muted">Paid:</span> $<?= number_format(
-                                                                            $model->paid_amount,
-                                                                            2,
-                                                                          ) ?></p>
-                  <p class="mb-0"><span class="text-muted">Balance:</span> $<?= number_format(
-                                                                              $model->balance_amount,
-                                                                              2,
-                                                                            ) ?></p>
+                <div class="col-4">
+                  <div class="text-center">
+                    <h3 class="fw-bold mb-0 invoice-title">វិក្កយបត្រ<br>Invoice</h3>
+                  </div>
+                </div>
+                <div class="col-4 text-end">
+                  <div id="barcode-container" class="mb-3">
+                    <div><svg id="invoice-barcode"></svg></div>
+                    <div id="invoice-code"><?= $model->code ?></div>
+                  </div>
+                  <p class="mb-0"><span class="text-muted">Date:</span> <?= $utils->date($model->date) ?></p>
                 </div>
               </div>
             </div>
           </div>
           <div class="col-lg-12">
             <div class="card-body p-4">
-              <div class="table-responsive">
-                <table class="table table-borderless text-center align-top mb-0">
+              <div class="table-responsives">
+                <table class="table table-sm table-borderless text-center align-top mb-0">
                   <thead>
                     <tr class="table-active">
                       <th scope="col" style="width: 50px;">#</th>
                       <th scope="col" style="width: 90px;">Image</th>
-                      <th scope="col" class="text-start" style="min-width: 280px;">Product Details</th>
-                      <th scope="col" style="min-width: 120px;">Serial</th>
-                      <th scope="col" style="min-width: 80px;">Price</th>
-                      <th scope="col" style="min-width: 80px;">Quantity</th>
-                      <th scope="col" class="text-end" style="min-width: 80px;">Amount</th>
+                      <th scope="col" class="text-start" style="min-width: 250px;">Product Details</th>
+                      <!-- <th scope="col" style="min-width: 120px;">Serial</th> -->
+                      <th scope="col" style="min-width: 60px;">Price</th>
+                      <th scope="col" style="min-width: 50px;">Quantity</th>
+                      <th scope="col" class="text-end" style="min-width: 60px;">Amount</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -202,10 +191,11 @@ $utils = Yii::$app->utils;
                           ) ?>
                           <div class="d-flex align-items-center mt-2">
                             <div class="flex-grow-1">
+                              <?php if ($item->serial): ?>
+                                <p class="text-muted mb-1"><span class="fw-medium">Serial:</span> <?= Html::encode($item->serial) ?></p>
+                              <?php endif; ?>
                               <?php if ($item->sku): ?>
-                                <p class="text-muted mb-1"><span class="fw-medium">SKU:</span> <?= Html::encode(
-                                                                                                  $item->sku,
-                                                                                                ) ?></p>
+                                <p class="text-muted mb-1"><span class="fw-medium">SKU:</span> <?= Html::encode($item->sku) ?></p>
                               <?php endif; ?>
                               <?php if ($item->description): ?>
                                 <p class="text-muted mb-0"><?= nl2br(
@@ -215,7 +205,7 @@ $utils = Yii::$app->utils;
                             </div>
                           </div>
                         </td>
-                        <td><?= Html::encode($item->serial ?: '-') ?></td>
+                        <td class="d-none"><?= Html::encode($item->serial ?: '-') ?></td>
                         <td>
                           $<?= number_format($item->price, 2) ?>
                           <?php if ($item->discount > 0): ?>
@@ -239,7 +229,7 @@ $utils = Yii::$app->utils;
                 </table>
               </div>
               <div class="border-top border-top-dashed mt-2">
-                <table class="table table-borderless table-nowrap align-middle mb-0 ms-auto" style="width:250px">
+                <table class="table table-sm table-borderless table-nowrap align-middle mb-0 ms-auto" style="width:250px">
                   <tbody>
                     <tr>
                       <td>Sub Total</td>
@@ -291,16 +281,16 @@ $utils = Yii::$app->utils;
                     </tr>
                     <tr class="border-top border-top-dashed fs-15">
                       <th scope="row">Total Amount</th>
-                      <th class="text-end text-success fs-5">$<?= number_format(
-                                                                $model->grand_total,
-                                                                2,
-                                                              ) ?></th>
+                      <th class="text-end text-dark fs-5">$<?= number_format(
+                                                              $model->grand_total,
+                                                              2,
+                                                            ) ?></th>
                     </tr>
                   </tbody>
                 </table>
               </div>
               <?php if ($model->remark): ?>
-                <div class="mt-4">
+                <div class="mt-4 d-print-none" id="invoice-note">
                   <div class="alert alert-info">
                     <p class="mb-0"><span class="fw-semibold">NOTES:</span>
                       <span><?= nl2br(Html::encode($model->remark)) ?></span>
@@ -317,12 +307,17 @@ $utils = Yii::$app->utils;
                                               ) ?></p>
                 </div>
               <?php endif; ?>
+
+              <div class="row font-size-sm invoice-signature">
+                <div class="col-3 offset-2 text-center">Customer / អ្នកទិញ</div>
+                <div class="col-3 offset-2 text-center">Sales / អ្នកលក់</div>
+              </div>
             </div>
           </div>
         </div>
       </div>
     </div>
-    <div class="col-xxl-3 mt-xxl-0 mt-4">
+    <div class="col-xxl-3 mt-xxl-0 mt-4 d-print-none" data-html2canvas-ignore="true">
       <div class="card">
         <div class="card-body">
           <h6 class="text-muted text-uppercase fw-semibold mb-3">Margin Summary</h6>
@@ -566,6 +561,62 @@ $utils = Yii::$app->utils;
 
 
 <?php
+// Register print styles
+$printCss = <<<CSS
+@media print {
+  body {
+    font-size: 11px;
+  }
+  img.img-thumbnail {
+    max-width: 60px !important;
+    max-height: 60px !important;
+    object-fit: contain !important;
+  }
+  
+  .invoice-view {
+    font-size: 11px;
+  }
+  
+  h1, h2, h3, h4, h5, h6 {
+    font-size: 12px;
+  }
+  
+  .invoice-title {
+    font-size: 18px !important;
+  }
+  
+  .card {
+    border: none;
+    page-break-inside: avoid;
+  }
+  
+  .table {
+    font-size: 10px;
+  }
+  
+  .table th, .table td {
+    padding: 0.25rem !important;
+  }
+  
+  .card-header, .card-body {
+    padding: 0.75rem !important;
+  }
+  
+  .btn, .btn-group {
+    display: none !important;
+  }
+  
+  .d-print-none {
+    display: none !important;
+  }
+  
+  p {
+    margin-bottom: 0.25rem;
+  }
+}
+CSS;
+$this->registerCss($printCss);
+
 $csrfParam = Yii::$app->request->csrfParam;
 $csrfToken = Yii::$app->request->csrfToken;
 $balanceJs = json_encode($model->balance_amount);
@@ -603,6 +654,34 @@ $js = <<<JS
         submitPost(url);
       }
     });
+  });
+
+  // Print Invoice using current view
+  $('#btn-print-invoice').on('click', function () {
+    window.print();
+  });
+
+  // Generate barcode
+  $(document).ready(function() {
+    if (typeof JsBarcode === 'undefined') {
+      console.warn('JsBarcode library not loaded');
+      return;
+    }
+    
+    var invoiceCode = "$model->code";
+    if (invoiceCode && invoiceCode.trim()) {
+      try {
+        JsBarcode('#invoice-barcode', invoiceCode, {
+          format: 'CODE128',
+          width: 1,
+          height: 20,
+          displayValue: false,
+          margin: 1
+        });
+      } catch(e) {
+        console.error('Barcode generation error:', e);
+      }
+    }
   });
 
   var invoiceBalance = Number({$balanceJs} || 0);

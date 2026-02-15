@@ -13,29 +13,29 @@ use yii\bootstrap5\NavBar;
 AppAsset::register($this);
 
 $this->registerCsrfMetaTags();
-$this->registerMetaTag(['charset' => Yii::$app->charset], 'charset');
+$this->registerMetaTag(['charset' => 'UTF-8'], 'charset');
 $this->registerMetaTag([
-  'name' => 'viewport',
-  'content' => 'width=device-width, initial-scale=1, shrink-to-fit=no',
+    'name' => 'viewport',
+    'content' => 'width=device-width, initial-scale=1, shrink-to-fit=no',
 ]);
 $this->registerMetaTag([
-  'name' => 'description',
-  'content' => $this->params['meta_description'] ?? '',
+    'name' => 'description',
+    'content' => $this->params['meta_description'] ?? '',
 ]);
 $this->registerMetaTag([
-  'name' => 'keywords',
-  'content' => $this->params['meta_keywords'] ?? '',
+    'name' => 'keywords',
+    'content' => $this->params['meta_keywords'] ?? '',
 ]);
 $this->registerLinkTag([
-  'rel' => 'icon',
-  'type' => 'image/x-icon',
-  'href' => Yii::getAlias('@web/images/favicon.ico'),
+    'rel' => 'icon',
+    'type' => 'image/x-icon',
+    'href' => Yii::getAlias('@web/images/favicon.ico'),
 ]);
 ?>
 <?php $this->beginPage(); ?>
 <!DOCTYPE html>
 <html lang="<?= Yii::$app
-  ->language ?>" data-layout="vertical" data-topbar="light" data-sidebar="light" data-sidebar-size="lg" data-sidebar-image="none" data-preloader="disable">
+                ->language ?>" data-layout="vertical" data-topbar="light" data-sidebar="light" data-sidebar-size="lg" data-sidebar-image="none" data-preloader="disable">
 
 <head>
     <title><?= Html::encode($this->title) ?></title>
@@ -67,13 +67,13 @@ $this->registerLinkTag([
                         <div class="col-12">
                             <div class="page-title-box d-sm-flex align-items-center justify-content-between">
                                 <h4 class="mb-sm-0"><?= Html::encode(
-                                  $this->title,
-                                ) ?></h4>
+                                                        $this->title,
+                                                    ) ?></h4>
                                 <?php if (
-                                  !empty($this->params['breadcrumbs'])
+                                    !empty($this->params['breadcrumbs'])
                                 ): ?>
                                     <?= Breadcrumbs::widget([
-                                      'links' => $this->params['breadcrumbs'],
+                                        'links' => $this->params['breadcrumbs'],
                                     ]) ?>
                                 <?php endif; ?>
                             </div>

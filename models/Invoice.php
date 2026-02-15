@@ -15,6 +15,8 @@ use yii\db\Expression;
  * @property string $code
  * @property string $serial_code
  * @property int $customer_id
+ * @property string $phone
+ * @property string $address
  * @property string $date
  * @property string $due_date
  * @property string $remark
@@ -90,7 +92,7 @@ class Invoice extends \yii\db\ActiveRecord
         ],
         'number',
       ],
-      [['code', 'serial_code'], 'string', 'max' => 50],
+      [['code', 'serial_code', 'phone', 'address'], 'string', 'max' => 50],
     ];
   }
 

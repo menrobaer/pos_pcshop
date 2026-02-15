@@ -78,6 +78,12 @@ class InvoiceController extends Controller
     return $this->render('view', $this->prepareInvoiceViewData($model));
   }
 
+  public function actionPrintA5($id)
+  {
+    $model = $this->findModel($id);
+    return $this->render('print-a5', ['model' => $model]);
+  }
+
   public function actionAddPayment($id)
   {
     $invoice = $this->findModel($id);
@@ -698,6 +704,8 @@ class InvoiceController extends Controller
       ->orderBy(['id' => SORT_DESC])
       ->one();
     $num = $last ? (int) substr($last->code, 4) + 1 : 1;
+    // Reset every 30
+    $num = (($num - 1) % 30) + 1;
     return 'INV-' . str_pad($num, 5, '0', STR_PAD_LEFT);
   }
 
@@ -716,6 +724,8 @@ class InvoiceController extends Controller
     $num = 1;
     if ($last && preg_match('/^INV-(\d+)$/', $last->code, $matches)) {
       $num = (int) $matches[1] + 1;
+      // Reset every 30
+      $num = (($num - 1) % 30) + 1;
     }
     return 'INV-' . str_pad($num, 5, '0', STR_PAD_LEFT);
   }
