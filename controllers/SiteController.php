@@ -116,6 +116,20 @@ class SiteController extends Controller
       ->where(['between', 'created_at', $start, $end])
       ->count();
 
+    // Total margins
+    $totalMargin =
+      (float) (\app\models\Invoice::find()
+        ->where(['between', 'created_at', $start, $end])
+        ->andWhere([
+          'IN',
+          'status',
+          [
+            \app\models\Invoice::STATUS_PAID,
+            \app\models\Invoice::STATUS_PROCESS,
+          ],
+        ])
+        ->sum('grand_total - cost_total') ?? 0);
+
     // Total products
     $totalProducts = (int) \app\models\Product::find()
       ->where(['between', 'created_at', $start, $end])
@@ -179,7 +193,7 @@ class SiteController extends Controller
       'totalRevenue' => $totalRevenue,
       'totalPOs' => $totalPOs,
       'totalPOAmount' => $totalPOAmount,
-      'totalCustomers' => $totalCustomers,
+      'totalMargin' => $totalMargin,
       'totalProducts' => $totalProducts,
       'totalStock' => $totalStock,
       'recentInvoices' => $recentInvoices,

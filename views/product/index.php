@@ -48,6 +48,7 @@ echo \app\widgets\Modal::widget([
                 'searchModel' => $searchModel,
                 'categories' => $categories,
                 'brands' => $brands,
+                'models' => $models,
               ]) ?>
             </div>
           </div>
@@ -104,6 +105,12 @@ echo \app\widgets\Modal::widget([
             'attribute' => 'brand_id',
             'value' => function ($model) {
               return $model->brand ? $model->brand->name : '-';
+            },
+          ],
+          [
+            'attribute' => 'model_id',
+            'value' => function ($model) {
+              return $model->model ? $model->model->name : '-';
             },
           ],
           'name',

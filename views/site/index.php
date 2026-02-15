@@ -27,7 +27,7 @@ $stats = [
     'total_invoices' => $totalInvoices,
     'total_po_amount' => $totalPOAmount,
     'total_pos' => $totalPOs,
-    'total_customers' => $totalCustomers,
+    'total_margins' => $totalMargin,
     'total_products' => $totalProducts,
     'total_stock' => $totalStock,
 ];
@@ -174,14 +174,14 @@ $activityViewUrl = function ($activity) {
                                 <div class="row g-3 mb-0 align-items-center">
                                     <div class="col-sm-auto">
                                         <div class="input-group">
-                                            <input type="text" name="date_range" class="form-control border-0 dash-filter-picker shadow" data-provider="flatpickr" data-range-date="true" data-date-format="d M, Y" value="<?= Html::encode(
-                                                                                                                                                                                                                                Yii::$app->request->get(
-                                                                                                                                                                                                                                    'date_range',
-                                                                                                                                                                                                                                    date('01 M, Y') .
-                                                                                                                                                                                                                                        ' to ' .
-                                                                                                                                                                                                                                        date('d M, Y'),
-                                                                                                                                                                                                                                ),
-                                                                                                                                                                                                                            ) ?>">
+                                            <input
+                                                type="text"
+                                                name="date_range"
+                                                class="form-control border-0 dash-filter-picker shadow"
+                                                data-provider="flatpickr"
+                                                data-range-date="true"
+                                                data-date-format="d M, Y"
+                                                value="<?= Html::encode(Yii::$app->request->get('date_range', date('01 M, Y') . ' to ' .  date('d M, Y'))) ?>">
                                             <button type="submit" class="input-group-text bg-primary border-primary text-white">
                                                 <i class="ri-equalizer-fill"></i>
                                             </button>
@@ -245,9 +245,7 @@ $activityViewUrl = function ($activity) {
                             <div class="d-flex align-items-end justify-content-between mt-4">
                                 <div>
                                     <h4 class="fs-22 fw-semibold ff-secondary mb-4"><span class="counter-value" data-target="<?= $stats['total_invoices'] ?>">0</span></h4>
-                                    <a href="<?= Url::to([
-                                                    'invoice/index',
-                                                ]) ?>" class="text-decoration-underline">View all invoices</a>
+                                    <a href="<?= Url::to(['invoice/index']) ?>" class="text-decoration-underline">View all invoices</a>
                                 </div>
                                 <div class="avatar-sm flex-shrink-0">
                                     <span class="avatar-title bg-info-subtle rounded fs-3">
@@ -265,24 +263,24 @@ $activityViewUrl = function ($activity) {
                         <div class="card-body">
                             <div class="d-flex align-items-center">
                                 <div class="flex-grow-1 overflow-hidden">
-                                    <p class="text-uppercase fw-medium text-muted text-truncate mb-0">Total Customers</p>
+                                    <p class="text-uppercase fw-medium text-muted text-truncate mb-0">Total Margins</p>
                                 </div>
                                 <div class="flex-shrink-0">
                                     <h5 class="text-warning fs-14 mb-0">
-                                        <i class="ri-user-3-line fs-13 align-middle"></i>
+                                        <i class="ri-pie-chart-line fs-13 align-middle"></i>
                                     </h5>
                                 </div>
                             </div>
                             <div class="d-flex align-items-end justify-content-between mt-4">
                                 <div>
-                                    <h4 class="fs-22 fw-semibold ff-secondary mb-4"><span class="counter-value" data-target="<?= $stats['total_customers'] ?>">0</span></h4>
+                                    <h4 class="fs-22 fw-semibold ff-secondary mb-4">$<span class="counter-value" data-target="<?= (float)$stats['total_margins'] ?>">0</span></h4>
                                     <a href="<?= Url::to([
-                                                    'customer/index',
+                                                    'invoice/index',
                                                 ]) ?>" class="text-decoration-underline">See details</a>
                                 </div>
                                 <div class="avatar-sm flex-shrink-0">
                                     <span class="avatar-title bg-warning-subtle rounded fs-3">
-                                        <i class="ri-user-3-line text-warning"></i>
+                                        <i class="ri-pie-chart-line text-warning"></i>
                                     </span>
                                 </div>
                             </div>
