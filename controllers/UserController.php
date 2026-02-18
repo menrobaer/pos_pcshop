@@ -3,6 +3,8 @@
 namespace app\controllers;
 
 use app\models\User;
+use app\models\UserRole;
+use app\models\UserRolePermission;
 use app\models\UserSearch;
 use Yii;
 use yii\web\Controller;
@@ -94,7 +96,13 @@ class UserController extends Controller
 
     return $this->renderAjax('_form', [
       'model' => $model,
+      'roles' => $this->getRoles(),
     ]);
+  }
+
+  protected function getRoles()
+  {
+    return \yii\helpers\ArrayHelper::map(UserRole::find()->orderBy(['name' => SORT_ASC])->all(), 'id', 'name');
   }
 
   /**
@@ -147,6 +155,7 @@ class UserController extends Controller
 
     return $this->renderAjax('_form', [
       'model' => $model,
+      'roles' => $this->getRoles(),
     ]);
   }
 
