@@ -77,19 +77,19 @@ class SiteController extends Controller
       }
     }
 
-    $start = $startDate . ' 00:00:00';
-    $end = $endDate . ' 23:59:59';
+    $start = $startDate;
+    $end = $endDate;
 
     // Fetch dynamic statistics from database
     // Total invoices (all statuses)
     $totalInvoices = (int) \app\models\Invoice::find()
-      ->where(['between', 'created_at', $start, $end])
+      ->where(['between', 'date', $start, $end])
       ->count();
 
     // Total revenue (paid invoices only)
     $totalRevenue =
       (float) (\app\models\Invoice::find()
-        ->where(['between', 'created_at', $start, $end])
+        ->where(['between', 'date', $start, $end])
         ->andWhere([
           'IN',
           'status',
@@ -102,13 +102,13 @@ class SiteController extends Controller
 
     // Total POs
     $totalPOs = (int) \app\models\PurchaseOrder::find()
-      ->where(['between', 'created_at', $start, $end])
+      ->where(['between', 'date', $start, $end])
       ->count();
 
     // Total PO amount
     $totalPOAmount =
       (float) (\app\models\PurchaseOrder::find()
-        ->where(['between', 'created_at', $start, $end])
+        ->where(['between', 'date', $start, $end])
         ->sum('grand_total') ?? 0);
 
     // Total customers
@@ -119,7 +119,7 @@ class SiteController extends Controller
     // Total margins
     $totalMargin =
       (float) (\app\models\Invoice::find()
-        ->where(['between', 'created_at', $start, $end])
+        ->where(['between', 'date', $start, $end])
         ->andWhere([
           'IN',
           'status',
@@ -141,16 +141,16 @@ class SiteController extends Controller
     // Recent invoices (last 5)
     $recentInvoices = \app\models\Invoice::find()
       ->with('customer')
-      ->where(['between', 'created_at', $start, $end])
-      ->orderBy(['created_at' => SORT_DESC])
+      ->where(['between', 'date', $start, $end])
+      ->orderBy(['date' => SORT_DESC])
       ->limit(5)
       ->all();
 
     // Recent purchase orders (last 5)
     $recentPOs = \app\models\PurchaseOrder::find()
       ->with('supplier')
-      ->where(['between', 'created_at', $start, $end])
-      ->orderBy(['created_at' => SORT_DESC])
+      ->where(['between', 'date', $start, $end])
+      ->orderBy(['date' => SORT_DESC])
       ->limit(5)
       ->all();
 
@@ -169,7 +169,7 @@ class SiteController extends Controller
         'qty' => 'SUM(invoice_item.quantity)',
       ])
       ->leftJoin('invoice', 'invoice.id = invoice_item.invoice_id')
-      ->where(['between', 'invoice.created_at', $start, $end])
+      ->where(['between', 'invoice.date', $start, $end])
       ->andWhere([
         'IN',
         'invoice.status',

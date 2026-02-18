@@ -51,63 +51,63 @@ class ReportController extends Controller
     $endDate = $range['end'];
     $displayRange = $range['display'];
 
-    $start = $startDate . ' 00:00:00';
-    $end = $endDate . ' 23:59:59';
+    $start = $startDate;
+    $end = $endDate;
     $paidStatuses = [Invoice::STATUS_PAID, Invoice::STATUS_PROCESS];
 
     $totalRevenue = (float) Invoice::find()
-      ->where(['between', 'created_at', $start, $end])
+      ->where(['between', 'date', $start, $end])
       ->andWhere(['IN', 'status', $paidStatuses])
       ->sum('paid_amount');
 
     $invoiceCount = (int) Invoice::find()
-      ->where(['between', 'created_at', $start, $end])
+      ->where(['between', 'date', $start, $end])
       ->andWhere(['IN', 'status', $paidStatuses])
       ->count();
 
     $totalExpenseOnly = (float) Expense::find()
-      ->where(['between', 'created_at', $start, $end])
+      ->where(['between', 'date', $start, $end])
       ->andWhere(['!=', 'status', Expense::STATUS_CANCELLED])
       ->sum('grand_total');
 
     $expenseCount = (int) Expense::find()
-      ->where(['between', 'created_at', $start, $end])
+      ->where(['between', 'date', $start, $end])
       ->andWhere(['!=', 'status', Expense::STATUS_CANCELLED])
       ->count();
 
     $poStatuses = [PurchaseOrder::STATUS_PROCESS, PurchaseOrder::STATUS_PAID];
 
     $totalPurchaseOrders = (float) PurchaseOrder::find()
-      ->where(['between', 'created_at', $start, $end])
+      ->where(['between', 'date', $start, $end])
       ->andWhere(['IN', 'status', $poStatuses])
       ->sum('grand_total');
 
     $poCount = (int) PurchaseOrder::find()
-      ->where(['between', 'created_at', $start, $end])
+      ->where(['between', 'date', $start, $end])
       ->andWhere(['IN', 'status', $poStatuses])
       ->count();
 
     $recentInvoices = Invoice::find()
       ->with('customer')
-      ->where(['between', 'created_at', $start, $end])
+      ->where(['between', 'date', $start, $end])
       ->andWhere(['IN', 'status', $paidStatuses])
-      ->orderBy(['created_at' => SORT_DESC])
+      ->orderBy(['date' => SORT_DESC])
       ->limit(5)
       ->all();
 
     $recentExpenses = Expense::find()
       ->with('supplier')
-      ->where(['between', 'created_at', $start, $end])
+      ->where(['between', 'date', $start, $end])
       ->andWhere(['!=', 'status', Expense::STATUS_CANCELLED])
-      ->orderBy(['created_at' => SORT_DESC])
+      ->orderBy(['date' => SORT_DESC])
       ->limit(5)
       ->all();
 
     $recentPurchaseOrders = PurchaseOrder::find()
       ->with('supplier')
-      ->where(['between', 'created_at', $start, $end])
+      ->where(['between', 'date', $start, $end])
       ->andWhere(['IN', 'status', $poStatuses])
-      ->orderBy(['created_at' => SORT_DESC])
+      ->orderBy(['date' => SORT_DESC])
       ->limit(5)
       ->all();
 
@@ -123,17 +123,17 @@ class ReportController extends Controller
     );
     usort(
       $financialRows,
-      fn($a, $b) => strtotime($b['model']->created_at) <=>
-        strtotime($a['model']->created_at),
+      fn($a, $b) => strtotime($b['model']->date) <=>
+        strtotime($a['model']->date),
     );
     $financialRows = array_slice($financialRows, 0, 5);
 
     $revenueByDay = Invoice::find()
       ->select([
-        'period' => new Expression('DATE(created_at)'),
+        'period' => new Expression('date'),
         'total' => new Expression('SUM(paid_amount)'),
       ])
-      ->where(['between', 'created_at', $start, $end])
+      ->where(['between', 'date', $start, $end])
       ->andWhere(['IN', 'status', $paidStatuses])
       ->groupBy('period')
       ->orderBy('period')
@@ -142,10 +142,10 @@ class ReportController extends Controller
 
     $expenseByDay = Expense::find()
       ->select([
-        'period' => new Expression('DATE(created_at)'),
+        'period' => new Expression('date'),
         'total' => new Expression('SUM(grand_total)'),
       ])
-      ->where(['between', 'created_at', $start, $end])
+      ->where(['between', 'date', $start, $end])
       ->andWhere(['!=', 'status', Expense::STATUS_CANCELLED])
       ->groupBy('period')
       ->orderBy('period')
@@ -154,10 +154,10 @@ class ReportController extends Controller
 
     $poByDay = PurchaseOrder::find()
       ->select([
-        'period' => new Expression('DATE(created_at)'),
+        'period' => new Expression('date'),
         'total' => new Expression('SUM(grand_total)'),
       ])
-      ->where(['between', 'created_at', $start, $end])
+      ->where(['between', 'date', $start, $end])
       ->andWhere(['IN', 'status', $poStatuses])
       ->groupBy('period')
       ->orderBy('period')
@@ -213,22 +213,22 @@ class ReportController extends Controller
     $endDate = $range['end'];
     $displayRange = $range['display'];
 
-    $start = $startDate . ' 00:00:00';
-    $end = $endDate . ' 23:59:59';
+    $start = $startDate;
+    $end = $endDate;
     $paidStatuses = [Invoice::STATUS_PAID, Invoice::STATUS_PROCESS];
 
     $totalRevenue = (float) Invoice::find()
-      ->where(['between', 'created_at', $start, $end])
+      ->where(['between', 'date', $start, $end])
       ->andWhere(['IN', 'status', $paidStatuses])
       ->sum('paid_amount');
 
     $invoiceCount = (int) Invoice::find()
-      ->where(['between', 'created_at', $start, $end])
+      ->where(['between', 'date', $start, $end])
       ->andWhere(['IN', 'status', $paidStatuses])
       ->count();
 
     $uniqueCustomers = (int) Invoice::find()
-      ->where(['between', 'created_at', $start, $end])
+      ->where(['between', 'date', $start, $end])
       ->andWhere(['IN', 'status', $paidStatuses])
       ->andWhere(['IS NOT', 'customer_id', null])
       ->select('customer_id')
@@ -238,15 +238,15 @@ class ReportController extends Controller
     // Total margins
     $totalMargin =
       (float) (\app\models\Invoice::find()
-        ->where(['between', 'invoice.created_at', $start, $end])
+        ->where(['between', 'invoice.date', $start, $end])
         ->andWhere(['IN', 'invoice.status', $paidStatuses])
         ->sum('grand_total - cost_total') ?? 0);
 
     $recentInvoices = Invoice::find()
       ->with('customer')
-      ->where(['between', 'created_at', $start, $end])
+      ->where(['between', 'date', $start, $end])
       ->andWhere(['IN', 'status', $paidStatuses])
-      ->orderBy(['created_at' => SORT_DESC])
+      ->orderBy(['date' => SORT_DESC])
       ->limit(5)
       ->all();
 
@@ -259,7 +259,7 @@ class ReportController extends Controller
         'invoice_count' => new Expression('COUNT(invoice.id)'),
       ])
       ->leftJoin('customer', 'customer.id = invoice.customer_id')
-      ->where(['between', 'invoice.created_at', $start, $end])
+      ->where(['between', 'invoice.date', $start, $end])
       ->andWhere(['IN', 'invoice.status', $paidStatuses])
       ->groupBy('invoice.customer_id')
       ->orderBy(['total_revenue' => SORT_DESC])
@@ -324,15 +324,15 @@ class ReportController extends Controller
     $endDate = $range['end'];
     $displayRange = $range['display'];
 
-    $start = $startDate . ' 00:00:00';
-    $end = $endDate . ' 23:59:59';
+    $start = $startDate;
+    $end = $endDate;
 
     $incoming = (int) Inventory::find()
-      ->where(['between', 'created_at', $start, $end])
+      ->where(['between', 'date', $start, $end])
       ->sum('`in`');
 
     $outgoing = (int) Inventory::find()
-      ->where(['between', 'created_at', $start, $end])
+      ->where(['between', 'date', $start, $end])
       ->sum('`out`');
 
     $netMovement = $incoming - $outgoing;
@@ -347,7 +347,7 @@ class ReportController extends Controller
         'net' => new Expression('SUM(inventory.in - inventory.out)'),
       ])
       ->leftJoin('product', 'product.id = inventory.product_id')
-      ->where(['between', 'inventory.created_at', $start, $end])
+      ->where(['between', 'inventory.date', $start, $end])
       ->groupBy('inventory.product_id')
       ->orderBy(['net' => SORT_DESC])
       ->limit(10)
@@ -356,12 +356,12 @@ class ReportController extends Controller
 
     $dailyMovements = Inventory::find()
       ->select([
-        'period' => new Expression('DATE(created_at)'),
+        'period' => new Expression('date'),
         'incoming' => new Expression('SUM(inventory.in)'),
         'outgoing' => new Expression('SUM(inventory.out)'),
         'net' => new Expression('SUM(inventory.in - inventory.out)'),
       ])
-      ->where(['between', 'created_at', $start, $end])
+      ->where(['between', 'date', $start, $end])
       ->groupBy('period')
       ->orderBy('period')
       ->asArray()
@@ -369,8 +369,8 @@ class ReportController extends Controller
 
     $recentLogs = Inventory::find()
       ->with('product')
-      ->where(['between', 'created_at', $start, $end])
-      ->orderBy(['created_at' => SORT_DESC])
+      ->where(['between', 'date', $start, $end])
+      ->orderBy(['date' => SORT_DESC])
       ->limit(5)
       ->all();
 
@@ -393,41 +393,41 @@ class ReportController extends Controller
     $endDate = $range['end'];
     $displayRange = $range['display'];
 
-    $start = $startDate . ' 00:00:00';
-    $end = $endDate . ' 23:59:59';
+    $start = $startDate;
+    $end = $endDate;
     $paidStatuses = [Invoice::STATUS_PAID, Invoice::STATUS_PROCESS];
 
     $totalSales = (float) Invoice::find()
-      ->where(['between', 'invoice.created_at', $start, $end])
+      ->where(['between', 'invoice.date', $start, $end])
       ->andWhere(['IN', 'status', $paidStatuses])
       ->sum('grand_total');
 
     $invoiceCount = (int) Invoice::find()
-      ->where(['between', 'created_at', $start, $end])
+      ->where(['between', 'date', $start, $end])
       ->andWhere(['IN', 'status', $paidStatuses])
       ->count();
 
     $totalUnits = (int) InvoiceItem::find()
       ->alias('invoice_item')
       ->leftJoin('invoice', 'invoice.id = invoice_item.invoice_id')
-      ->where(['between', 'invoice.created_at', $start, $end])
+      ->where(['between', 'invoice.date', $start, $end])
       ->andWhere(['IN', 'invoice.status', $paidStatuses])
       ->sum('invoice_item.quantity');
 
     // Total margins
     $totalMargin =
       (float) (\app\models\Invoice::find()
-        ->where(['between', 'invoice.created_at', $start, $end])
+        ->where(['between', 'invoice.date', $start, $end])
         ->andWhere(['IN', 'invoice.status', $paidStatuses])
         ->sum('grand_total - cost_total') ?? 0);
 
     $dailySales = Invoice::find()
       ->select([
-        'period' => new Expression('DATE(created_at)'),
+        'period' => new Expression('date'),
         'orders' => new Expression('COUNT(id)'),
         'total' => new Expression('SUM(grand_total)'),
       ])
-      ->where(['between', 'created_at', $start, $end])
+      ->where(['between', 'date', $start, $end])
       ->andWhere(['IN', 'status', $paidStatuses])
       ->groupBy('period')
       ->orderBy('period')
@@ -445,7 +445,7 @@ class ReportController extends Controller
         ),
       ])
       ->leftJoin('invoice', 'invoice.id = invoice_item.invoice_id')
-      ->where(['between', 'invoice.created_at', $start, $end])
+      ->where(['between', 'invoice.date', $start, $end])
       ->andWhere(['IN', 'invoice.status', $paidStatuses])
       ->groupBy('invoice_item.product_id', 'invoice_item.product_name')
       ->orderBy(['quantity' => SORT_DESC])
@@ -455,9 +455,9 @@ class ReportController extends Controller
 
     $recentInvoices = Invoice::find()
       ->with('customer')
-      ->where(['between', 'created_at', $start, $end])
+      ->where(['between', 'date', $start, $end])
       ->andWhere(['IN', 'status', $paidStatuses])
-      ->orderBy(['created_at' => SORT_DESC])
+      ->orderBy(['date' => SORT_DESC])
       ->limit(5)
       ->all();
 
