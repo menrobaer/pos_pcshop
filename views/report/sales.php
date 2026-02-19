@@ -182,6 +182,7 @@ $this->title = 'Sales Report';
                 <th scope="col">Date</th>
                 <th scope="col">Orders</th>
                 <th scope="col">Sales</th>
+                <th scope="col">Margins</th>
               </tr>
             </thead>
             <tbody>
@@ -195,6 +196,7 @@ $this->title = 'Sales Report';
                     <td><?= Utils::date($day['period']) ?></td>
                     <td><?= Html::encode($day['orders']) ?></td>
                     <td><?= Utils::dollarFormat($day['total']) ?></td>
+                    <td><?= Utils::dollarFormat($day['margins']) ?></td>
                   </tr>
                 <?php endforeach; ?>
               <?php endif; ?>

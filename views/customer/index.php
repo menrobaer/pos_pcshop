@@ -42,7 +42,7 @@ echo \app\widgets\Modal::widget([
           <div class="col-sm">
             <div class="d-flex justify-content-sm-end">
               <?= $this->render('_search', [
-                'searchModel' => $searchModel,
+                'model' => $searchModel,
               ]) ?>
             </div>
           </div>

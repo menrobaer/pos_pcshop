@@ -91,12 +91,30 @@ class Customer extends \yii\db\ActiveRecord
     }
   }
 
+  public static function getStatusList()
+  {
+    return [
+      self::STATUS_ACTIVE => 'Active',
+      self::STATUS_INACTIVE => 'Inactive',
+      self::STATUS_DELETED => 'Deleted',
+    ];
+  }
+
+  public function getStatusLabel()
+  {
+    return self::getStatusList()[$this->status] ?? 'Unknown';
+  }
+
   public function getStatusBadge()
   {
-    if ($this->status == 1) {
+    if ($this->status == self::STATUS_ACTIVE) {
       return '<span class="badge bg-info">Active</span>';
-    } else {
+    } elseif ($this->status == self::STATUS_INACTIVE) {
       return '<span class="badge bg-danger">Inactive</span>';
+    } elseif ($this->status == self::STATUS_DELETED) {
+      return '<span class="badge bg-secondary">Deleted</span>';
+    } else {
+      return '<span class="badge bg-warning">Unknown</span>';
     }
   }
 }
