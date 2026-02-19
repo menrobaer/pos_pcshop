@@ -6,29 +6,29 @@ $form = ActiveForm::begin([
   'action' => ['index'],
   'method' => 'get',
   'options' => [
-    'class' => 'd-flex gap-2',
+    'class' => 'd-flex gap-3 flex-wrap align-items-center',
     'data-pjax' => 1,
   ],
 ]);
 ?>
-<?= $form
-  ->field($searchModel, 'status', [
-    'options' => ['class' => 'd-flex align-items-center gap-2'],
-  ])
-  ->dropDownList(
-    [1 => 'Active', 0 => 'Inactive'],
-    [
+
+<div id="filterContainer" class="d-flex gap-3 flex-wrap">
+  <?= $form
+    ->field($model, 'status', [
+      'options' => ['class' => 'd-flex flex-column filter-field'],
+    ])
+    ->dropDownList($model->getStatusList(), [
       'prompt' => 'All',
-      'class' => 'form-select',
+      'class' => 'form-select has-select2',
       'onchange' => '$(this.form).trigger("submit")',
-    ],
-  )
-  ->label('Status') ?>
-<div class="d-flex align-items-center gap-2 ms-2">
+    ])
+    ->label('Status') ?>
+</div>
+<div class="d-flex flex-column">
   <label class="control-label" for="searchCustomerList">Search</label>
   <div class="search-box">
     <?= $form
-      ->field($searchModel, 'name', [
+      ->field($model, 'name', [
         'template' => '{input}',
         'options' => ['tag' => false],
       ])
@@ -57,4 +57,4 @@ $(document).on('focus click', '#searchCustomerList', function() {
 });
 JS;
 $this->registerJs($js);
- ?>
+?>

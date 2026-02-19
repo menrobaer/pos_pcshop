@@ -426,11 +426,12 @@ class ReportController extends Controller
         'period' => new Expression('date'),
         'orders' => new Expression('COUNT(id)'),
         'total' => new Expression('SUM(grand_total)'),
+        'margins' => new Expression('SUM(grand_total - cost_total)'),
       ])
       ->where(['between', 'date', $start, $end])
       ->andWhere(['IN', 'status', $paidStatuses])
       ->groupBy('period')
-      ->orderBy('period')
+      ->orderBy(['period' => SORT_DESC])
       ->asArray()
       ->all();
 

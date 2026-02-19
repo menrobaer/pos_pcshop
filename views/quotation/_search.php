@@ -1,6 +1,7 @@
 <?php
 
 use yii\widgets\ActiveForm;
+
 /** @var yii\web\View $this */
 /** @var app\models\QuotationSearch $model */
 /** @var array $customers */
@@ -13,14 +14,15 @@ use yii\widgets\ActiveForm;
     'action' => ['index'],
     'method' => 'get',
     'options' => [
-      'class' => 'd-flex gap-2',
+      'class' => 'd-flex gap-3 flex-wrap align-items-center',
       'data-pjax' => 1,
     ],
   ]); ?>
 
+  <div id="filterContainer" class="d-flex gap-3 flex-wrap">
     <?= $form
       ->field($model, 'customer_id', [
-        'options' => ['class' => 'd-flex align-items-center gap-2'],
+        'options' => ['class' => 'd-flex flex-column filter-field'],
       ])
       ->dropDownList($customers, [
         'prompt' => 'All',
@@ -28,10 +30,9 @@ use yii\widgets\ActiveForm;
         'onchange' => '$(this.form).trigger("submit")',
       ])
       ->label('Customer') ?>
-
     <?= $form
       ->field($model, 'status', [
-        'options' => ['class' => 'd-flex align-items-center gap-2 ms-2'],
+        'options' => ['class' => 'd-flex flex-column filter-field'],
       ])
       ->dropDownList($model->getStatusList(), [
         'prompt' => 'All',
@@ -39,25 +40,26 @@ use yii\widgets\ActiveForm;
         'onchange' => '$(this.form).trigger("submit")',
       ])
       ->label('Status') ?>
-      <div class="d-flex align-items-center gap-2 ms-auto">
-          <label class="control-label" for="searchQuotationList">Search</label>
-          <div class="search-box">
-              <?= $form
-                ->field($model, 'globalSearch', [
-                  'template' => '{input}',
-                  'options' => ['tag' => false],
-                ])
-                ->textInput([
-                  'class' => 'form-control ps-5',
-                  'placeholder' => 'Search Code...',
-                  'id' => 'searchQuotationList',
-                ])
-                ->label(false) ?>
-              <i class="ri-search-line search-icon"></i>
-          </div>
-      </div>
+  </div>
+  <div class="d-flex flex-column">
+    <label class="control-label" for="searchQuotationList">Search</label>
+    <div class="search-box">
+      <?= $form
+        ->field($model, 'globalSearch', [
+          'template' => '{input}',
+          'options' => ['tag' => false],
+        ])
+        ->textInput([
+          'class' => 'form-control ps-5',
+          'placeholder' => 'Search Quotations...',
+          'id' => 'searchQuotationList',
+        ])
+        ->label(false) ?>
+      <i class="ri-search-line search-icon"></i>
+    </div>
+  </div>
 
-    <?php ActiveForm::end(); ?>
+  <?php ActiveForm::end(); ?>
 
 </div>
 
