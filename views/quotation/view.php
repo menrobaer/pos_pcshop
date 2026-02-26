@@ -28,6 +28,12 @@ $marginPercent = $totalSale > 0 ? ($totalMargin / $totalSale) * 100 : 0;
 $utils = Yii::$app->utils;
 ?>
 <style>
+  .invoice-signature .col-3 {
+    margin-top: 2rem;
+    height: 4rem;
+    border-bottom: 1px solid #333;
+  }
+
   #barcode-container {
     position: relative !important;
     width: fit-content !important;
@@ -136,9 +142,9 @@ $utils = Yii::$app->utils;
             <div class="card-body p-4 border-top border-top-dashed">
               <div class="row g-3">
                 <div class="col-4">
-                  <p class="fw-bold mb-2">Bill To: <?= $model->customer ? Html::encode($model->customer->name) : '-' ?></p>
-                  <p class="text-muted mb-0"><span>Phone: </span><?= $model->customer ? Html::encode($model->customer->phone) : '-' ?></p>
-                  <p class="text-muted mb-1"><span>Address: </span><?= $model->customer ? Html::encode($model->customer->address) : '-' ?></p>
+                  <p class="fw-bold mb-2">Quote To: <?= $model->customer ? Html::encode($model->customer->name) : '-' ?></p>
+                  <p class="text-muted mb-0"><span>Phone: </span><?= $model->phone ? Html::encode($model->phone) : '-' ?></p>
+                  <p class="text-muted mb-1"><span>Address: </span><?= $model->address ? Html::encode($model->address) : '-' ?></p>
                 </div>
                 <div class="col-4">
                   <div class="text-center">
@@ -301,11 +307,16 @@ $utils = Yii::$app->utils;
               <?php if ($outlet && $outlet->terms): ?>
                 <div class="mt-4">
                   <h6 class="text-muted text-uppercase fw-semibold mb-2">Terms & Conditions:</h6>
-                  <p class="text-muted mb-0"><?= nl2br(
-                                                Html::encode($outlet->terms),
-                                              ) ?></p>
+                  <p class="text-muted mb-0">
+                    <?= nl2br(
+                      Html::encode($outlet->terms),
+                    ) ?></p>
                 </div>
               <?php endif; ?>
+              <div class="row font-size-sm invoice-signature">
+                <div class="col-3 offset-2 text-center">Customer / អ្នកទិញ</div>
+                <div class="col-3 offset-2 text-center">Sales / អ្នកលក់</div>
+              </div>
             </div>
             <!--end card-body-->
           </div><!--end col-->
@@ -314,7 +325,7 @@ $utils = Yii::$app->utils;
       <!--end card-->
     </div>
     <!--end col-->
-    <div class="col-xxl-3 mt-xxl-0 mt-4">
+    <div class="col-xxl-3 mt-xxl-0 mt-4 d-print-none" data-html2canvas-ignore="true">
       <div class="card">
         <div class="card-body">
           <h6 class="text-muted text-uppercase fw-semibold mb-3">Margin Summary</h6>

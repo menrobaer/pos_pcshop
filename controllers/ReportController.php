@@ -328,11 +328,11 @@ class ReportController extends Controller
     $end = $endDate;
 
     $incoming = (int) Inventory::find()
-      ->where(['between', 'date', $start, $end])
+      ->where(['between', 'created_at', $start, $end])
       ->sum('`in`');
 
     $outgoing = (int) Inventory::find()
-      ->where(['between', 'date', $start, $end])
+      ->where(['between', 'created_at', $start, $end])
       ->sum('`out`');
 
     $netMovement = $incoming - $outgoing;
@@ -347,7 +347,7 @@ class ReportController extends Controller
         'net' => new Expression('SUM(inventory.in - inventory.out)'),
       ])
       ->leftJoin('product', 'product.id = inventory.product_id')
-      ->where(['between', 'inventory.date', $start, $end])
+      ->where(['between', 'inventory.created_at', $start, $end])
       ->groupBy('inventory.product_id')
       ->orderBy(['net' => SORT_DESC])
       ->limit(10)
@@ -356,12 +356,12 @@ class ReportController extends Controller
 
     $dailyMovements = Inventory::find()
       ->select([
-        'period' => new Expression('date'),
+        'period' => new Expression('created_at'),
         'incoming' => new Expression('SUM(inventory.in)'),
         'outgoing' => new Expression('SUM(inventory.out)'),
         'net' => new Expression('SUM(inventory.in - inventory.out)'),
       ])
-      ->where(['between', 'date', $start, $end])
+      ->where(['between', 'created_at', $start, $end])
       ->groupBy('period')
       ->orderBy('period')
       ->asArray()
@@ -369,8 +369,8 @@ class ReportController extends Controller
 
     $recentLogs = Inventory::find()
       ->with('product')
-      ->where(['between', 'date', $start, $end])
-      ->orderBy(['date' => SORT_DESC])
+      ->where(['between', 'created_at', $start, $end])
+      ->orderBy(['created_at' => SORT_DESC])
       ->limit(5)
       ->all();
 

@@ -25,6 +25,8 @@ class m260210_052837_create_quotation_table extends Migration
         'code' => $this->string(50)->notNull(),
         'serial_code' => $this->string(50)->notNull(),
         'customer_id' => $this->integer()->notNull(),
+        'phone' => $this->string(50)->notNull(),
+        'address' => $this->string(255)->notNull(),
         'date' => $this->date()->notNull(),
         'due_date' => $this->date()->notNull(),
         'remark' => $this->text()->notNull(),
