@@ -26,12 +26,6 @@ $items = $items ?? $model->items;
         <div class="col-md-2">
             <?= $form->field($model, 'code')->textInput(['readonly' => true]) ?>
         </div>
-        <div class="col-md-3">
-            <?= $form->field($model, 'customer_id')->dropDownList($customers, [
-                'prompt' => 'Select Customer',
-                'class' => 'form-control has-select2',
-            ]) ?>
-        </div>
         <div class="col-md-2">
             <?= $form->field($model, 'date')->textInput([
                 'data-provider' => 'flatpickr',
@@ -45,6 +39,18 @@ $items = $items ?? $model->items;
                 'data-date-format' => 'Y-m-d',
                 'data-altFormat' => 'd M, Y',
             ]) ?>
+        </div>
+        <div class="col-md-2">
+            <?= $form->field($model, 'customer_id')->dropDownList($customers, [
+                'prompt' => 'Select Customer',
+                'class' => 'form-control has-select2',
+            ]) ?>
+        </div>
+        <div class="col-md-2">
+            <?= $form->field($model, 'phone')->textInput() ?>
+        </div>
+        <div class="col-md-2">
+            <?= $form->field($model, 'address')->textInput() ?>
         </div>
     </div>
 

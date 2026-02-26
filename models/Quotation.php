@@ -14,6 +14,8 @@ use yii\db\Expression;
  * @property string $code
  * @property string $serial_code
  * @property int $customer_id
+ * @property string $phone
+ * @property string $address
  * @property string $date
  * @property string $due_date
  * @property string $remark
@@ -65,6 +67,7 @@ class Quotation extends \yii\db\ActiveRecord
       [['customer_id', 'status', 'created_by', 'updated_by'], 'integer'],
       [['date', 'due_date', 'created_at', 'updated_at'], 'safe'],
       [['remark'], 'string'],
+      [['address'], 'string', 'max' => 255],
       [
         [
           'delivery_fee',
@@ -78,7 +81,7 @@ class Quotation extends \yii\db\ActiveRecord
         ],
         'number',
       ],
-      [['code', 'serial_code'], 'string', 'max' => 50],
+      [['code', 'serial_code', 'phone'], 'string', 'max' => 50],
       [
         'due_date',
         'compare',
@@ -101,6 +104,8 @@ class Quotation extends \yii\db\ActiveRecord
       'code' => 'Code',
       'serial_code' => 'Serial Code',
       'customer_id' => 'Customer',
+      'phone' => 'Phone',
+      'address' => 'Address',
       'date' => 'Date',
       'due_date' => 'Due Date',
       'remark' => 'Remark',
