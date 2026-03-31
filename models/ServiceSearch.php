@@ -4,27 +4,33 @@ namespace app\models;
 
 use yii\base\Model;
 use yii\data\ActiveDataProvider;
-use app\models\Invoice;
+use app\models\Service;
 
 /**
- * InvoiceSearch represents the model behind the search form of `app\models\Invoice`.
+ * ServiceSearch represents the model behind the search form of `app\models\Service`.
  */
-class InvoiceSearch extends Invoice
+class ServiceSearch extends Service
 {
   public $globalSearch;
+
   /**
    * {@inheritdoc}
    */
   public function rules()
   {
     return [
-      [['id', 'customer_id', 'status', 'created_by', 'updated_by'], 'integer'],
+      [
+        ['id', 'customer_id', 'status', 'created_by', 'updated_by'],
+        'integer',
+      ],
       [
         [
           'code',
           'serial_code',
           'date',
           'due_date',
+          'phone',
+          'address',
           'remark',
           'created_at',
           'updated_at',
@@ -66,11 +72,9 @@ class InvoiceSearch extends Invoice
    */
   public function search($params)
   {
-    $query = Invoice::find();
-    $query->andWhere(['!=', 'status', Invoice::STATUS_DELETED]);
+    $query = Service::find();
+    $query->andWhere(['!=', 'status', Service::STATUS_DELETED]);
     $query->joinWith('items');
-
-    // add conditions that should always apply here
 
     $dataProvider = new ActiveDataProvider([
       'query' => $query,
@@ -80,21 +84,12 @@ class InvoiceSearch extends Invoice
     $this->load($params);
 
     if (!$this->validate()) {
-      // uncomment the following line if you do not want to return any records when validation fails
-      // $query->where('0=1');
       return $dataProvider;
-    }
-    $controller  = \Yii::$app->controller->id;
-    if ($controller == 'invoice') {
-      $query->andWhere(['type' => 'general']);
-    } elseif ($controller == 'invoice-instant') {
-      $query->andWhere(['type' => 'instant']);
     }
 
     // grid filtering conditions
     $query->andFilterWhere([
       'id' => $this->id,
-      'quotation_id' => $this->quotation_id,
       'customer_id' => $this->customer_id,
       'date' => $this->date,
       'due_date' => $this->due_date,
@@ -107,23 +102,22 @@ class InvoiceSearch extends Invoice
       'paid_amount' => $this->paid_amount,
       'balance_amount' => $this->balance_amount,
       'status' => $this->status,
-      'created_at' => $this->created_at,
-      'created_by' => $this->created_by,
-      'updated_at' => $this->updated_at,
-      'updated_by' => $this->updated_by,
     ]);
 
     $query
       ->andFilterWhere(['like', 'code', $this->code])
       ->andFilterWhere(['like', 'serial_code', $this->serial_code])
-      ->andFilterWhere(['like', 'remark', $this->remark]);
+      ->andFilterWhere(['like', 'phone', $this->phone])
+      ->andFilterWhere(['like', 'address', $this->address]);
 
-    $query->andFilterWhere([
-      'or',
-      ['like', 'code', $this->globalSearch],
-      ['like', 'serial_code', $this->globalSearch],
-      ['like', 'invoice_item.serial', $this->globalSearch],
-    ]);
+    if ($this->globalSearch) {
+      $query->andWhere([
+        'or',
+        ['like', 'code', $this->globalSearch],
+        ['like', 'serial_code', $this->globalSearch],
+        ['like', 'phone', $this->globalSearch],
+      ]);
+    }
 
     return $dataProvider;
   }

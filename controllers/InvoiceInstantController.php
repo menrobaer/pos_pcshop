@@ -19,9 +19,9 @@ use yii\web\Controller;
 use yii\web\NotFoundHttpException;
 
 /**
- * InvoiceController provides index and view pages for invoices.
+ * InvoiceInstantController provides index and view pages for invoices.
  */
-class InvoiceController extends Controller
+class InvoiceInstantController extends Controller
 {
   /**
    * @inheritDoc
@@ -31,15 +31,6 @@ class InvoiceController extends Controller
     return array_merge(
       parent::behaviors(),
       [
-        'access' => [
-          'class' => \yii\filters\AccessControl::class,
-          'rules' => [
-            [
-              'actions' => \app\models\User::getUserPermission(Yii::$app->controller->id),
-              'allow' => true,
-            ]
-          ],
-        ],
         'verbs' => [
           'class' => VerbFilter::class,
           'actions' => [
@@ -199,7 +190,7 @@ class InvoiceController extends Controller
     $model->due_date = date('Y-m-d', strtotime('+7 days'));
     $model->code = $this->generateCode();
     $model->serial_code = $this->generateSerialCode();
-    $model->type = 'general';
+    $model->type = 'instant';
     $items = [];
 
     if ($quotation_id) {
@@ -251,28 +242,12 @@ class InvoiceController extends Controller
             $item->invoice_id = $model->id;
             if ($item->load($itemData, '')) {
               $costTotal += $item->cost * $item->quantity;
-              if (!$item->save()) {
+              if (!$item->save(false)) {
                 $errors = implode(
                   '<br>',
                   \yii\helpers\ArrayHelper::getColumn($item->getErrors(), 0),
                 );
                 throw new Exception('Failed to save Invoice item: ' . $errors);
-              }
-              // track inventory - invoices reduce stock (OUT)
-              Yii::$app->utils::updateInventory(
-                $item->product_id,
-                $item->quantity,
-                $model->id,
-                Inventory::TYPE_INVOICE,
-                'out',
-              );
-
-              // remove serial from product variation
-              if (!empty($item->serial)) {
-                \app\models\ProductVariation::deleteAll([
-                  'product_id' => $item->product_id,
-                  'serial' => $item->serial,
-                ]);
               }
             }
           }
@@ -348,29 +323,6 @@ class InvoiceController extends Controller
           throw new Exception('Failed to update Invoice header.');
         }
 
-        // Roll inventory back to the pre-invoice state by deleting the old records
-        $oldItems = InvoiceItem::findAll(['invoice_id' => $model->id]);
-        foreach ($oldItems as $oldItem) {
-          Product::updateAllCounters(
-            ['available' => $oldItem->quantity],
-            ['id' => $oldItem->product_id],
-          );
-
-          // Restore variation if it was removed
-          if (!empty($oldItem->serial)) {
-            if (!\app\models\ProductVariation::find()->where(['product_id' => $oldItem->product_id, 'serial' => $oldItem->serial])->exists()) {
-              $v = new \app\models\ProductVariation();
-              $v->product_id = $oldItem->product_id;
-              $v->serial = $oldItem->serial;
-              $v->save(false);
-            }
-          }
-        }
-        Inventory::deleteAll([
-          'type' => Inventory::TYPE_INVOICE,
-          'transaction_id' => $model->id,
-        ]);
-
         InvoiceItem::deleteAll(['invoice_id' => $model->id]);
         $items = $this->request->post('InvoiceItem', []);
         $costTotal = 0;
@@ -379,28 +331,12 @@ class InvoiceController extends Controller
           $item->invoice_id = $model->id;
           if ($item->load($itemData, '')) {
             $costTotal += $item->cost * $item->quantity;
-            if (!$item->save()) {
+            if (!$item->save(false)) {
               $errors = implode(
                 '<br>',
                 \yii\helpers\ArrayHelper::getColumn($item->getErrors(), 0),
               );
               throw new Exception('Failed to save Invoice item: ' . $errors);
-            }
-            // track inventory - invoices reduce stock (OUT)
-            Yii::$app->utils::updateInventory(
-              $item->product_id,
-              $item->quantity,
-              $model->id,
-              Inventory::TYPE_INVOICE,
-              'out',
-            );
-
-            // remove serial from product variation
-            if (!empty($item->serial)) {
-              \app\models\ProductVariation::deleteAll([
-                'product_id' => $item->product_id,
-                'serial' => $item->serial,
-              ]);
             }
           }
         }
@@ -449,28 +385,6 @@ class InvoiceController extends Controller
     $model = $this->findModel($id);
     $transaction = Yii::$app->db->beginTransaction();
     try {
-      // Reverse inventory for all items
-      $items = InvoiceItem::findAll(['invoice_id' => $model->id]);
-      foreach ($items as $item) {
-        Yii::$app->utils::updateInventory(
-          $item->product_id,
-          $item->quantity,
-          $model->id,
-          Inventory::TYPE_INVOICE,
-          'in',
-        );
-
-        // Restore variations
-        if (!empty($item->serial)) {
-          if (!\app\models\ProductVariation::find()->where(['product_id' => $item->product_id, 'serial' => $item->serial])->exists()) {
-            $v = new \app\models\ProductVariation();
-            $v->product_id = $item->product_id;
-            $v->serial = $item->serial;
-            $v->save(false);
-          }
-        }
-      }
-
       $model->status = Invoice::STATUS_DELETED;
       $model->save(false, ['status']);
       $transaction->commit();
@@ -548,28 +462,6 @@ class InvoiceController extends Controller
     if ($model->status == Invoice::STATUS_CANCELLED) {
       Yii::$app->session->setFlash('info', 'Invoice is already cancelled.');
       return $this->redirect(['view', 'id' => $model->id]);
-    }
-
-    // Reverse inventory for all items
-    $items = InvoiceItem::findAll(['invoice_id' => $model->id]);
-    foreach ($items as $item) {
-      Yii::$app->utils::updateInventory(
-        $item->product_id,
-        $item->quantity,
-        $model->id,
-        Inventory::TYPE_INVOICE,
-        'in',
-      );
-
-      // Restore variations
-      if (!empty($item->serial)) {
-        if (!\app\models\ProductVariation::find()->where(['product_id' => $item->product_id, 'serial' => $item->serial])->exists()) {
-          $v = new \app\models\ProductVariation();
-          $v->product_id = $item->product_id;
-          $v->serial = $item->serial;
-          $v->save(false);
-        }
-      }
     }
 
     $model->status = Invoice::STATUS_CANCELLED;

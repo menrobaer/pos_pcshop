@@ -3,13 +3,17 @@
 /** @var yii\web\View $this */
 /** @var string $dateRange */
 /** @var float $totalRevenue */
+/** @var float $invoiceRevenue */
+/** @var float $serviceRevenue */
 /** @var float $totalExpenses */
 /** @var float $netProfit */
 /** @var int $invoiceCount */
+/** @var int $serviceCount */
 /** @var int $expenseCount */
 /** @var int $poCount */
 /** @var array $dailyReport */
 /** @var \app\models\Invoice[] $recentInvoices */
+/** @var \app\models\Service[] $recentServices */
 /** @var array $financialRows */
 
 use yii\helpers\Html;
@@ -44,18 +48,25 @@ $utils = Yii::$app->utils;
 </div>
 
 <div class="row g-3 mb-4">
-  <div class="col-md-4">
+  <div class="col-md-6">
     <div class="card card-height-100">
       <div class="card-body">
         <p class="text-uppercase fw-medium text-muted mb-1">Total Revenue</p>
-        <h4 class="fs-22 mb-1"><?= $utils->dollarFormat($totalRevenue) ?></h4>
-        <p class="text-muted mb-0 small"><?= Html::encode(
-                                            $invoiceCount,
-                                          ) ?> invoices</p>
+        <h4 class="fs-22 mb-2"><?= $utils->dollarFormat($totalRevenue) ?></h4>
+        <div class="small">
+          <p class="mb-1">
+            <span class="d-inline-block" style="width: 8px; height: 8px; border-radius: 50%; background-color: #0d6efd; vertical-align: middle;"></span>
+            Invoices: <?= Html::encode($invoiceCount) ?> (<?= $utils->dollarFormat($invoiceRevenue) ?>)
+          </p>
+          <p class="mb-0">
+            <span class="d-inline-block" style="width: 8px; height: 8px; border-radius: 50%; background-color: #198754; vertical-align: middle;"></span>
+            Services: <?= Html::encode($serviceCount) ?> (<?= $utils->dollarFormat($serviceRevenue) ?>)
+          </p>
+        </div>
       </div>
     </div>
   </div>
-  <div class="col-md-4">
+  <div class="col-md-3">
     <div class="card card-height-100">
       <div class="card-body">
         <p class="text-uppercase fw-medium text-muted mb-1">Total Expenses</p>
@@ -67,7 +78,7 @@ $utils = Yii::$app->utils;
       </div>
     </div>
   </div>
-  <div class="col-md-4">
+  <div class="col-md-3">
     <div class="card card-height-100">
       <div class="card-body">
         <p class="text-uppercase fw-medium text-muted mb-1">Net Profit</p>
@@ -129,13 +140,13 @@ $utils = Yii::$app->utils;
 </div>
 
 <div class="row mt-4">
-  <div class="col-xl-6">
+  <div class="col-xl-4">
     <div class="card">
       <div class="card-header d-flex align-items-center justify-content-between">
         <h5 class="mb-0">Recent Invoices</h5>
         <a href="<?= Url::to([
                     'invoice/index',
-                  ]) ?>" class="text-decoration-underline">All invoices</a>
+                  ]) ?>" class="text-decoration-underline">All</a>
       </div>
       <div class="card-body">
         <div class="table-responsive">
@@ -144,15 +155,13 @@ $utils = Yii::$app->utils;
               <tr>
                 <th scope="col">Code</th>
                 <th scope="col">Customer</th>
-                <th scope="col">Date</th>
                 <th scope="col">Amount</th>
-                <th scope="col">Status</th>
               </tr>
             </thead>
             <tbody>
               <?php if (empty($recentInvoices)): ?>
                 <tr>
-                  <td colspan="5" class="text-center text-muted py-4">No invoices found</td>
+                  <td colspan="3" class="text-center text-muted py-4">No invoices found</td>
                 </tr>
               <?php else: ?>
                 <?php foreach ($recentInvoices as $invoice): ?>
@@ -165,15 +174,10 @@ $utils = Yii::$app->utils;
                         <?= Html::encode($invoice->code) ?>
                       </a>
                     </td>
-                    <td><?= Html::encode(
-                          $invoice->customer ? $invoice->customer->name : 'Walk-in',
-                        ) ?></td>
-                    <td><?= $utils->date(
-                          $invoice->created_at,
-                          'php:d M, Y',
-                        ) ?></td>
-                    <td><?= $utils->dollarFormat($invoice->paid_amount) ?></td>
-                    <td><?= $invoice->getStatusLabel() ?></td>
+                    <td class="small"><?= Html::encode(
+                                        $invoice->customer ? $invoice->customer->name : 'Walk-in',
+                                      ) ?></td>
+                    <td class="small text-end"><?= $utils->dollarFormat($invoice->paid_amount) ?></td>
                   </tr>
                 <?php endforeach; ?>
               <?php endif; ?>
@@ -183,13 +187,60 @@ $utils = Yii::$app->utils;
       </div>
     </div>
   </div>
-  <div class="col-xl-6">
+  <div class="col-xl-4">
     <div class="card">
       <div class="card-header d-flex align-items-center justify-content-between">
-        <h5 class="mb-0">Recent Expenses & Purchase Orders</h5>
+        <h5 class="mb-0">Recent Services</h5>
+        <a href="<?= Url::to([
+                    'service/index',
+                  ]) ?>" class="text-decoration-underline">All</a>
+      </div>
+      <div class="card-body">
+        <div class="table-responsive">
+          <table class="table table-borderless align-middle mb-0">
+            <thead class="table-light">
+              <tr>
+                <th scope="col">Code</th>
+                <th scope="col">Customer</th>
+                <th scope="col">Amount</th>
+              </tr>
+            </thead>
+            <tbody>
+              <?php if (empty($recentServices)): ?>
+                <tr>
+                  <td colspan="3" class="text-center text-muted py-4">No services found</td>
+                </tr>
+              <?php else: ?>
+                <?php foreach ($recentServices as $service): ?>
+                  <tr>
+                    <td>
+                      <a href="<?= Url::to([
+                                  'service/view',
+                                  'id' => $service->id,
+                                ]) ?>" class="link-primary fw-semibold">
+                        <?= Html::encode($service->code) ?>
+                      </a>
+                    </td>
+                    <td class="small"><?= Html::encode(
+                                        $service->customer ? $service->customer->name : 'Walk-in',
+                                      ) ?></td>
+                    <td class="small text-end"><?= $utils->dollarFormat($service->paid_amount) ?></td>
+                  </tr>
+                <?php endforeach; ?>
+              <?php endif; ?>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="col-xl-4">
+    <div class="card">
+      <div class="card-header d-flex align-items-center justify-content-between">
+        <h5 class="mb-0">Recent Expenses & POs</h5>
         <a href="<?= Url::to([
                     'expense/index',
-                  ]) ?>" class="text-decoration-underline">All expenses</a>
+                  ]) ?>" class="text-decoration-underline">All</a>
       </div>
       <div class="card-body">
         <div class="table-responsive">
@@ -198,16 +249,13 @@ $utils = Yii::$app->utils;
               <tr>
                 <th scope="col">Code</th>
                 <th scope="col">Supplier</th>
-                <th scope="col">Date</th>
                 <th scope="col">Amount</th>
-                <th scope="col">Type</th>
-                <th scope="col">Status</th>
               </tr>
             </thead>
             <tbody>
               <?php if (empty($financialRows)): ?>
                 <tr>
-                  <td colspan="6" class="text-center text-muted py-4">No expenses found</td>
+                  <td colspan="3" class="text-center text-muted py-4">No expenses found</td>
                 </tr>
               <?php else: ?>
                 <?php foreach ($financialRows as $row):
@@ -221,10 +269,6 @@ $utils = Yii::$app->utils;
                   $supplierName = $model->supplier
                     ? $model->supplier->name
                     : 'Unknown';
-                  $typeLabel = $isExpense ? 'Expense' : 'Purchase Order';
-                  $badgeClass = $isExpense
-                    ? 'badge bg-secondary-subtle text-secondary'
-                    : 'badge bg-primary-subtle text-primary';
                 ?>
                   <tr>
                     <td>
@@ -232,15 +276,8 @@ $utils = Yii::$app->utils;
                         <?= Html::encode($model->code) ?>
                       </a>
                     </td>
-                    <td><?= Html::encode($supplierName) ?></td>
-                    <td><?= $utils->date($model->created_at) ?></td>
-                    <td><?= $utils->dollarFormat($model->grand_total) ?></td>
-                    <td>
-                      <span class="<?= $badgeClass ?>"><?= Html::encode(
-                                                          $typeLabel,
-                                                        ) ?></span>
-                    </td>
-                    <td><?= $model->getStatusLabel() ?></td>
+                    <td class="small"><?= Html::encode($supplierName) ?></td>
+                    <td class="small text-end"><?= $utils->dollarFormat($model->grand_total) ?></td>
                   </tr>
                 <?php
                 endforeach; ?>

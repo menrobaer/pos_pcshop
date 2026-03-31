@@ -47,38 +47,38 @@ $action = Yii::$app->controller->action->id;
       <ul class="navbar-nav" id="navbar-nav">
         <li class="menu-title"><span>Menu</span></li>
         <li class="nav-item">
-          <a class="nav-link menu-link <?= $controller == 'site'
-                                          ? 'active'
-                                          : '' ?>" href="<?= Yii::$app->homeUrl ?>">
+          <a class="nav-link menu-link <?= $controller == 'site' ? 'active' : '' ?>" href="<?= Yii::$app->homeUrl ?>">
             <i class="ri-dashboard-2-line"></i> <span>Dashboard</span>
           </a>
         </li>
         <?php $isProduct = in_array($controller, ['product', 'product-category', 'product-brand', 'product-model']); ?>
         <li class="nav-item">
-          <a class="nav-link menu-link <?= $controller == 'product'
-                                          ? 'active'
-                                          : '' ?>" href="<?= Url::to(['product/index']) ?>">
+          <a class="nav-link menu-link <?= $isProduct ? 'active' : '' ?>" href="<?= Url::to(['product/index']) ?>">
             <i class="ri-apps-2-line"></i> <span>Products</span>
           </a>
         </li>
         <li class="nav-item">
-          <a class="nav-link menu-link <?= $controller == 'quotation'
-                                          ? 'active'
-                                          : '' ?>" href="<?= Url::to(['quotation/index']) ?>">
+          <a class="nav-link menu-link <?= $controller == 'service' ? 'active' : '' ?>" href="<?= Url::to(['service/index']) ?>">
+            <i class="ri-file-list-line"></i> <span>Services</span>
+          </a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link menu-link <?= $controller == 'quotation' ? 'active' : '' ?>" href="<?= Url::to(['quotation/index']) ?>">
             <i class="ri-list-check"></i> <span>Quotations</span>
           </a>
         </li>
         <li class="nav-item">
-          <a class="nav-link menu-link <?= $controller == 'invoice'
-                                          ? 'active'
-                                          : '' ?>" href="<?= Url::to(['invoice/index']) ?>">
+          <a class="nav-link menu-link <?= $controller == 'invoice' ? 'active' : '' ?>" href="<?= Url::to(['invoice/index']) ?>">
             <i class="ri-file-text-line"></i> <span>Invoices</span>
           </a>
         </li>
         <li class="nav-item">
-          <a class="nav-link menu-link <?= $controller == 'expense'
-                                          ? 'active'
-                                          : '' ?>" href="<?= Url::to(['expense/index']) ?>">
+          <a class="nav-link menu-link <?= $controller == 'invoice-instant' ? 'active' : '' ?>" href="<?= Url::to(['invoice-instant/index']) ?>">
+            <i class="ri-flashlight-line"></i> <span>Instant Invoices</span>
+          </a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link menu-link <?= $controller == 'expense'  ? 'active'  : '' ?>" href="<?= Url::to(['expense/index']) ?>">
             <i class="ri-money-dollar-circle-line"></i> <span>Expenses</span>
           </a>
         </li>
@@ -90,14 +90,10 @@ $action = Yii::$app->controller->action->id;
           <div class="collapse menu-dropdown <?= $isPeople ? 'show' : '' ?>" id="sidebarPeople">
             <ul class="nav nav-sm flex-column">
               <li class="nav-item">
-                <a href="<?= Url::to([
-                            'customer/index',
-                          ]) ?>" class="nav-link <?= $controller == 'customer'  ? 'active' : '' ?>">Customers</a>
+                <a href="<?= Url::to(['customer/index']) ?>" class="nav-link <?= $controller == 'customer'  ? 'active' : '' ?>">Customers</a>
               </li>
               <li class="nav-item">
-                <a href="<?= Url::to([
-                            'supplier/index',
-                          ]) ?>" class="nav-link <?= $controller == 'supplier' ? 'active' : '' ?>">Suppliers</a>
+                <a href="<?= Url::to(['supplier/index']) ?>" class="nav-link <?= $controller == 'supplier' ? 'active' : '' ?>">Suppliers</a>
               </li>
             </ul>
           </div>
@@ -110,24 +106,19 @@ $action = Yii::$app->controller->action->id;
           <div class="collapse menu-dropdown <?= $isReport ? 'show' : '' ?>" id="sidebarReports">
             <ul class="nav nav-sm flex-column">
               <li class="nav-item">
-                <a href="<?= Url::to([
-                            'report/financial',
-                          ]) ?>" class="nav-link <?= $controller == 'report' && $action == 'financial' ? 'active' : '' ?>">Financial</a>
+                <a href="<?= Url::to(['report/financial']) ?>" class="nav-link <?= $controller == 'report' && $action == 'financial' ? 'active' : '' ?>">Financial</a>
               </li>
               <li class="nav-item">
-                <a href="<?= Url::to([
-                            'report/customer-revenue',
-                          ]) ?>" class="nav-link <?= $controller == 'report' && $action == 'customer-revenue' ? 'active' : '' ?>">Customer Revenue</a>
+                <a href="<?= Url::to(['report/customer-revenue']) ?>" class="nav-link <?= $controller == 'report' && $action == 'customer-revenue' ? 'active' : '' ?>">Customer Revenue</a>
               </li>
               <li class="nav-item">
-                <a href="<?= Url::to([
-                            'report/sales',
-                          ]) ?>" class="nav-link <?= $controller == 'report' && $action == 'sales' ? 'active' : '' ?>">Sales</a>
+                <a href="<?= Url::to(['report/sales']) ?>" class="nav-link <?= $controller == 'report' && $action == 'sales' ? 'active' : '' ?>">Sales</a>
               </li>
               <li class="nav-item">
-                <a href="<?= Url::to([
-                            'report/inventory',
-                          ]) ?>" class="nav-link <?= $controller == 'report' && $action == 'inventory' ? 'active' : '' ?>">Inventory</a>
+                <a href="<?= Url::to(['report/service']) ?>" class="nav-link <?= $controller == 'report' && $action == 'service' ? 'active' : '' ?>">Services</a>
+              </li>
+              <li class="nav-item">
+                <a href="<?= Url::to(['report/inventory']) ?>" class="nav-link <?= $controller == 'report' && $action == 'inventory' ? 'active' : '' ?>">Inventory</a>
               </li>
             </ul>
           </div>
@@ -147,34 +138,22 @@ $action = Yii::$app->controller->action->id;
           <div class="collapse menu-dropdown <?= $isSetting ? 'show' : '' ?>" id="sidebarSettings">
             <ul class="nav nav-sm flex-column">
               <li class="nav-item">
-                <a href="<?= Url::to([
-                            'product-category/index',
-                          ]) ?>" class="nav-link <?= $controller == 'product-category' ? 'active' : '' ?>">Product Category</a>
+                <a href="<?= Url::to(['product-category/index']) ?>" class="nav-link <?= $controller == 'product-category' ? 'active' : '' ?>">Product Category</a>
               </li>
               <li class="nav-item">
-                <a href="<?= Url::to([
-                            'product-brand/index',
-                          ]) ?>" class="nav-link <?= $controller == 'product-brand' ? 'active' : '' ?>">Product Brand</a>
+                <a href="<?= Url::to(['product-brand/index']) ?>" class="nav-link <?= $controller == 'product-brand' ? 'active' : '' ?>">Product Brand</a>
               </li>
               <li class="nav-item">
-                <a href="<?= Url::to([
-                            'product-model/index',
-                          ]) ?>" class="nav-link <?= $controller == 'product-model' ? 'active' : '' ?>">Product Model</a>
+                <a href="<?= Url::to(['product-model/index']) ?>" class="nav-link <?= $controller == 'product-model' ? 'active' : '' ?>">Product Model</a>
               </li>
               <li class="nav-item">
-                <a href="<?= Url::to([
-                            'user/index',
-                          ]) ?>" class="nav-link <?= $controller == 'user' ? 'active' : '' ?>">Users</a>
+                <a href="<?= Url::to(['user/index']) ?>" class="nav-link <?= $controller == 'user' ? 'active' : '' ?>">Users</a>
               </li>
               <li class="nav-item">
-                <a href="<?= Url::to([
-                            'user-permission/index',
-                          ]) ?>" class="nav-link <?= $controller == 'user-permission' ? 'active' : '' ?>">User Permission</a>
+                <a href="<?= Url::to(['user-permission/index']) ?>" class="nav-link <?= $controller == 'user-permission' ? 'active' : '' ?>">User Permission</a>
               </li>
               <li class="nav-item">
-                <a href="<?= Url::to([
-                            'outlet/index',
-                          ]) ?>" class="nav-link <?= $controller == 'outlet' ? 'active' : '' ?>">Outlet</a>
+                <a href="<?= Url::to(['outlet/index']) ?>" class="nav-link <?= $controller == 'outlet' ? 'active' : '' ?>">Outlet</a>
               </li>
             </ul>
           </div>

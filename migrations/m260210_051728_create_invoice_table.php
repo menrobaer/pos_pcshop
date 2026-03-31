@@ -22,6 +22,7 @@ class m260210_051728_create_invoice_table extends Migration
       '{{%invoice}}',
       [
         'id' => $this->primaryKey(),
+        'type' => $this->string(20),
         'quotation_id' => $this->integer()->notNull(),
         'code' => $this->string(50)->notNull(),
         'serial_code' => $this->string(50)->notNull(),

@@ -92,7 +92,7 @@ $this->registerLinkTag([
                 <div class="container-fluid">
                     <div class="row">
                         <div class="col-sm-6">
-                            VLC Computer - &copy; Apple Tech <?= date('Y') ?>
+                            VLC Computer - &copy; <a href="https://innovixkh.com" target="_blank">INNOVIX KH</a> <?= date('Y') ?>
                         </div>
                     </div>
                 </div>

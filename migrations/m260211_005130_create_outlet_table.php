@@ -21,6 +21,7 @@ class m260211_005130_create_outlet_table extends Migration
       'website' => $this->string(100),
       'email' => $this->string(100),
       'terms' => $this->text(),
+      'terms_service' => $this->text(),
       'status' => $this->smallInteger()->defaultValue(1),
       'created_at' => $this->dateTime(),
       'created_by' => $this->integer(),

@@ -8,11 +8,9 @@ use yii\behaviors\TimestampBehavior;
 use yii\db\Expression;
 
 /**
- * This is the model class for table "invoice".
+ * This is the model class for table "service".
  *
  * @property int $id
- * @property string|null $type
- * @property int $quotation_id
  * @property string $code
  * @property string $serial_code
  * @property int $customer_id
@@ -35,14 +33,14 @@ use yii\db\Expression;
  * @property string|null $updated_at
  * @property int|null $updated_by
  */
-class Invoice extends \yii\db\ActiveRecord
+class Service extends \yii\db\ActiveRecord
 {
   /**
    * {@inheritdoc}
    */
   public static function tableName()
   {
-    return 'invoice';
+    return 'service';
   }
 
   const STATUS_ACTIVE = 1,
@@ -75,7 +73,7 @@ class Invoice extends \yii\db\ActiveRecord
     return [
       [['code', 'serial_code', 'customer_id', 'date', 'due_date'], 'required'],
       [
-        ['quotation_id', 'customer_id', 'status', 'created_by', 'updated_by'],
+        ['customer_id', 'status', 'created_by', 'updated_by'],
         'integer',
       ],
       [['date', 'due_date', 'created_at', 'updated_at'], 'safe'],
@@ -93,7 +91,6 @@ class Invoice extends \yii\db\ActiveRecord
         ],
         'number',
       ],
-      [['type'], 'string', 'max' => 20],
       [['code', 'serial_code', 'phone', 'address'], 'string', 'max' => 50],
     ];
   }
@@ -105,11 +102,11 @@ class Invoice extends \yii\db\ActiveRecord
   {
     return [
       'id' => 'ID',
-      'type' => 'Type',
-      'quotation_id' => 'Quotation',
       'code' => 'Code',
       'serial_code' => 'Serial Code',
       'customer_id' => 'Customer',
+      'phone' => 'Phone',
+      'address' => 'Address',
       'date' => 'Date',
       'due_date' => 'Due Date',
       'remark' => 'Remark',
@@ -180,6 +177,14 @@ class Invoice extends \yii\db\ActiveRecord
    */
   public function getItems()
   {
-    return $this->hasMany(InvoiceItem::class, ['invoice_id' => 'id']);
+    return $this->hasMany(ServiceItem::class, ['service_id' => 'id']);
+  }
+
+  /**
+   * @return \yii\db\ActiveQuery
+   */
+  public function getPayments()
+  {
+    return $this->hasMany(ServicePayment::class, ['service_id' => 'id']);
   }
 }

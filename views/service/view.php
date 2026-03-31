@@ -1,0 +1,591 @@
+<?php
+
+use yii\helpers\Html;
+use yii\helpers\Url;
+
+/** @var yii\web\View $this */
+/** @var app\models\Service $model */
+/** @var app\models\Outlet $outlet */
+/** @var app\models\ServicePayment $paymentModel */
+/** @var app\models\ServicePayment[] $payments */
+/** @var array $paymentMethods */
+
+// Register JsBarcode library
+$this->registerJsFile('https://cdn.jsdelivr.net/npm/jsbarcode@3.11.5/dist/JsBarcode.all.min.js', ['depends' => [\yii\web\JqueryAsset::class]]);
+
+$this->title = 'Service Details: ' . $model->code;
+$this->params['breadcrumbs'][] = ['label' => 'Services', 'url' => ['index']];
+$this->params['breadcrumbs'][] = $this->title;
+\yii\web\YiiAsset::register($this);
+
+$totalCost = 0.0;
+foreach ($model->items as $it) {
+  $costPer = $it->cost ?? 0.0;
+  $qty = isset($it->quantity) ? (float) $it->quantity : 0.0;
+  $totalCost += $costPer * $qty;
+}
+$totalSale = (float) $model->grand_total;
+$totalMargin = $totalSale - $totalCost;
+$marginPercent = $totalSale > 0 ? ($totalMargin / $totalSale) * 100 : 0;
+
+/** @var app\components\Utils $utils */
+$utils = Yii::$app->utils;
+?>
+
+<style>
+  .invoice-signature .col-3 {
+    margin-top: 2rem;
+    height: 4rem;
+    border-bottom: 1px solid #333;
+  }
+
+  #barcode-container {
+    position: relative !important;
+    width: fit-content !important;
+    margin-left: auto !important;
+  }
+
+  #barcode-container>div:first-child {
+    display: flex !important;
+  }
+
+  #invoice-code {
+    background-color: #fff !important;
+    position: absolute !important;
+    top: 50% !important;
+    left: 50% !important;
+    transform: translateX(-50%) !important;
+    z-index: 10 !important;
+    white-space: nowrap !important;
+    padding: 2px 4px !important;
+  }
+</style>
+<div class="service-view">
+  <div class="row">
+    <div class="col-xxl-9">
+      <div class="card" id="demo">
+        <div class="row">
+          <div class="col-lg-12">
+            <div class="card-header border-bottom-dashed p-4">
+              <div class="d-flex justify-content-end">
+                <div class="flex-shrink-0 mt-sm-0 mt-3 text-end">
+                  <div class="mb-4 d-print-none" data-html2canvas-ignore="true">
+                    <?php if (
+                      $model->status != \app\models\Service::STATUS_CANCELLED &&
+                      $model->status != \app\models\Service::STATUS_PAID
+                    ): ?>
+                      <?= Html::a(
+                        '<i class="ri-edit-line align-bottom me-1"></i> Update',
+                        ['update', 'id' => $model->id],
+                        [
+                          'class' => 'btn btn-primary btn-sm',
+                        ],
+                      ) ?>
+                    <?php else: ?>
+                      <?= Html::button(
+                        '<i class="ri-edit-line align-bottom me-1"></i> Update',
+                        [
+                          'class' => 'btn btn-primary btn-sm disabled',
+                          'title' =>
+                          'Service is not editable after cancel/paid.',
+                        ],
+                      ) ?>
+                    <?php endif; ?>
+                    <?= Html::a(
+                      '<i class="ri-delete-bin-line align-bottom me-1"></i> Delete',
+                      ['delete', 'id' => $model->id],
+                      [
+                        'class' => 'btn btn-danger btn-sm',
+                        'data' => [
+                          'confirm' =>
+                          'Are you sure you want to delete this item?',
+                          'method' => 'post',
+                        ],
+                      ],
+                    ) ?>
+                    <button type="button" id="btn-print-service" class="btn btn-soft-info btn-sm"><i class="ri-printer-line align-bottom me-1"></i> Print</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="col-lg-12">
+            <div class="card-body p-4 border-top border-top-dashed">
+              <div class="row g-3">
+                <div class="col-4">
+                  <p class="fw-bold mb-2">Service To: <?= $model->customer ? Html::encode($model->customer->name) : '-' ?></p>
+                  <p class="text-muted mb-0"><span>Phone: </span><?= $model->phone ? Html::encode($model->phone) : '-' ?></p>
+                  <p class="text-muted mb-1"><span>Address: </span><?= $model->address ? Html::encode($model->address) : '-' ?></p>
+                </div>
+                <div class="col-4">
+                  <div class="text-center">
+                    <h3 class="fw-bold mb-0 invoice-title">សេវាកម្ម<br>Service</h3>
+                  </div>
+                </div>
+                <div class="col-4 text-end">
+                  <div id="barcode-container" class="mb-3">
+                    <div><svg id="invoice-barcode"></svg></div>
+                    <div id="invoice-code"><?= $model->code ?></div>
+                  </div>
+                  <p class="mb-0"><span class="text-muted">Date:</span> <?= $utils->date($model->date) ?></p>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="col-lg-12">
+            <div class="card-body p-4">
+              <div class="table-responsives">
+                <table class="table table-sm table-borderless text-center align-top mb-0">
+                  <thead>
+                    <tr class="table-active">
+                      <th scope="col" style="width: 50px;">#</th>
+                      <th scope="col" class="text-start" style="min-width: 250px;">Service Details</th>
+                      <th scope="col" style="min-width: 60px;">Price</th>
+                      <th scope="col" style="min-width: 50px;">Quantity</th>
+                      <th scope="col" class="text-end" style="min-width: 60px;">Amount</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <?php foreach ($model->items as $index => $item): ?>
+                      <tr>
+                        <th scope="row"><?= str_pad(
+                                          $index + 1,
+                                          2,
+                                          '0',
+                                          STR_PAD_LEFT,
+                                        ) ?></th>
+                        <td class="text-start">
+                          <span class="fw-bold"><?= Html::encode($item->name) ?></span>
+                          <div class="d-flex align-items-center mt-2">
+                            <div class="flex-grow-1">
+                              <?php if ($item->description): ?>
+                                <p class="text-muted mb-0"><?= nl2br(
+                                                              Html::encode($item->description),
+                                                            ) ?></p>
+                              <?php endif; ?>
+                            </div>
+                          </div>
+                        </td>
+                        <td>
+                          $<?= number_format($item->price, 2) ?>
+                          <?php if ($item->discount > 0): ?>
+                            <div class="text-danger small">
+                              - <?= $item->discount_type === 'percent'
+                                  ? number_format($item->discount, 0) . '%'
+                                  : '$' . number_format($item->discount, 2) ?>
+                            </div>
+                          <?php endif; ?>
+                        </td>
+                        <td><?= $item->quantity ?></td>
+                        <td class="text-end">
+                          <div class="fw-bold">$<?= number_format(
+                                                  $item->quantity * $item->price -
+                                                    ($item->discount_type === 'percent'
+                                                      ? (($item->quantity * $item->price * $item->discount) / 100)
+                                                      : ($item->discount * $item->quantity)),
+                                                  2,
+                                                ) ?></div>
+                        </td>
+                      </tr>
+                    <?php endforeach; ?>
+                  </tbody>
+                </table>
+              </div>
+              <div class="border-top border-top-dashed mt-2">
+                <table class="table table-sm table-borderless table-nowrap align-middle mb-0 ms-auto" style="width:250px">
+                  <tbody>
+                    <tr>
+                      <td>Sub Total</td>
+                      <td class="text-end">$<?= number_format(
+                                              $model->sub_total,
+                                              2,
+                                            ) ?></td>
+                    </tr>
+                    <?php if ($model->discount_amount > 0): ?>
+                      <tr>
+                        <td>Discount</td>
+                        <td class="text-end text-danger">- $<?= number_format(
+                                                              $model->discount_amount,
+                                                              2,
+                                                            ) ?></td>
+                      </tr>
+                    <?php endif; ?>
+                    <?php if ($model->delivery_fee > 0): ?>
+                      <tr>
+                        <td>Delivery Fee</td>
+                        <td class="text-end">+ $<?= number_format(
+                                                  $model->delivery_fee,
+                                                  2,
+                                                ) ?></td>
+                      </tr>
+                    <?php endif; ?>
+                    <?php if ($model->extra_charge > 0): ?>
+                      <tr>
+                        <td>Extra Charge</td>
+                        <td class="text-end">+ $<?= number_format(
+                                                  $model->extra_charge,
+                                                  2,
+                                                ) ?></td>
+                      </tr>
+                    <?php endif; ?>
+                    <tr>
+                      <td>Paid</td>
+                      <td class="text-end">$<?= number_format(
+                                              $model->paid_amount,
+                                              2,
+                                            ) ?></td>
+                    </tr>
+                    <tr>
+                      <td>Balance</td>
+                      <td class="text-end text-danger">$<?= number_format(
+                                                          $model->balance_amount,
+                                                          2,
+                                                        ) ?></td>
+                    </tr>
+                    <tr class="border-top border-top-dashed fs-15">
+                      <th scope="row">Total Amount</th>
+                      <th class="text-end text-dark fs-5">$<?= number_format(
+                                                              $model->grand_total,
+                                                              2,
+                                                            ) ?></th>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+              <?php if ($model->remark): ?>
+                <div class="mt-4 d-print-none" id="service-note">
+                  <div class="alert alert-info">
+                    <p class="mb-0"><span class="fw-semibold">NOTES:</span>
+                      <span><?= nl2br(Html::encode($model->remark)) ?></span>
+                    </p>
+                  </div>
+                </div>
+              <?php endif; ?>
+
+              <?php if ($outlet && $outlet->terms_service): ?>
+                <div class="mt-4">
+                  <h6 class="text-muted text-uppercase fw-semibold mb-2">Terms & Conditions:</h6>
+                  <p class="text-muted mb-0"><?= nl2br(
+                                                Html::encode($outlet->terms_service),
+                                              ) ?></p>
+                </div>
+              <?php endif; ?>
+              <div class="row font-size-sm invoice-signature">
+                <div class="col-3 offset-2 text-center">Customer / អ្នកទិញ</div>
+                <div class="col-3 offset-2 text-center">Sales / អ្នកលក់</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="col-xxl-3 mt-xxl-0 mt-4 d-print-none" data-html2canvas-ignore="true">
+      <div class="card">
+        <div class="card-body">
+          <h6 class="text-muted text-uppercase fw-semibold mb-3">Margin Summary</h6>
+          <div class="d-flex justify-content-between mb-2">
+            <span>Total Cost</span>
+            <strong>$<?= number_format($totalCost, 2) ?></strong>
+          </div>
+          <div class="d-flex justify-content-between mb-2">
+            <span>Total Sale</span>
+            <strong>$<?= number_format($totalSale, 2) ?></strong>
+          </div>
+          <hr />
+          <div class="d-flex justify-content-between mb-2">
+            <span>Margin</span>
+            <strong>$<?= number_format($totalMargin, 2) ?></strong>
+          </div>
+          <div class="d-flex justify-content-between">
+            <span>Margin %</span>
+            <strong><?= number_format($marginPercent, 2) ?>%</strong>
+          </div>
+        </div>
+      </div>
+      <?php $canAcceptPayment =
+        $model->balance_amount > 0 &&
+        $model->status != \app\models\Service::STATUS_CANCELLED; ?>
+      <?php if ($canAcceptPayment): ?>
+        <div class="card mt-3">
+          <div class="card-body">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+              <h6 class="text-muted text-uppercase fw-semibold mb-0">Record Payment</h6>
+              <small class="text-muted">Balance: $<?= number_format(
+                                                    $model->balance_amount,
+                                                    2,
+                                                  ) ?></small>
+            </div>
+            <?php if ($paymentModel->hasErrors()): ?>
+              <div class="alert alert-danger small mb-3">
+                <?= Html::errorSummary($paymentModel, [
+                  'header' => '',
+                  'class' => 'mb-0',
+                ]) ?>
+              </div>
+            <?php endif; ?>
+            <?php if (empty($paymentMethods)): ?>
+              <div class="alert alert-warning mb-0">
+                Please add at least one payment method before recording payments.
+              </div>
+            <?php else: ?>
+              <?= Html::beginForm(
+                ['service/add-payment', 'id' => $model->id],
+                'post',
+                ['id' => 'service-payment-form'],
+              ) ?>
+              <div class="mb-3">
+                <label class="form-label d-flex justify-content-between">
+                  <span>Amount</span>
+                  <small class="text-muted">
+                    Remaining: $<?= number_format(
+                                  $model->balance_amount,
+                                  2,
+                                ) ?>
+                  </small>
+                </label>
+                <div class="input-group">
+                  <span class="input-group-text">$</span>
+                  <input
+                    id="payment-amount-input"
+                    type="number"
+                    step="0.01"
+                    min="0.01"
+                    max="<?= number_format(
+                            $model->balance_amount,
+                            2,
+                            '.',
+                            '',
+                          ) ?>"
+                    name="ServicePayment[amount]"
+                    value="<?= number_format(
+                              $paymentModel->amount,
+                              2,
+                              '.',
+                              '',
+                            ) ?>"
+                    class="form-control"
+                    required>
+                </div>
+                <?= Html::error($paymentModel, 'amount', [
+                  'class' => 'text-danger small',
+                ]) ?>
+                <div
+                  id="payment-suggestions"
+                  class="btn-group btn-group-sm mt-2"
+                  role="group"
+                  data-balance="<?= number_format(
+                                  $model->balance_amount,
+                                  2,
+                                  '.',
+                                  '',
+                                ) ?>">
+                  <button type="button" class="btn btn-outline-secondary payment-suggestion" data-percent="0.25">25%</button>
+                  <button type="button" class="btn btn-outline-secondary payment-suggestion" data-percent="0.5">50%</button>
+                  <button type="button" class="btn btn-outline-secondary payment-suggestion" data-percent="0.75">75%</button>
+                  <button type="button" class="btn btn-outline-secondary payment-suggestion" data-percent="1">Full Amount</button>
+                </div>
+              </div>
+              <div class="mb-3">
+                <label class="form-label">Payment Method</label>
+                <?= Html::dropDownList(
+                  'ServicePayment[payment_method_id]',
+                  $paymentModel->payment_method_id,
+                  $paymentMethods,
+                  [
+                    'prompt' => 'Select payment method',
+                    'class' => 'form-select',
+                    'required' => true,
+                  ],
+                ) ?>
+                <?= Html::error($paymentModel, 'payment_method_id', [
+                  'class' => 'text-danger small',
+                ]) ?>
+              </div>
+              <div class="mb-3">
+                <label class="form-label">Payment Date</label>
+                <input
+                  class="form-control"
+                  type="text"
+                  name="ServicePayment[date]"
+                  value="<?= Html::encode($paymentModel->date) ?>"
+                  data-provider="flatpickr"
+                  data-date-format="Y-m-d"
+                  data-alt-input="true"
+                  data-alt-format="d M, Y"
+                  autocomplete="off"
+                  required>
+                <?= Html::error($paymentModel, 'date', [
+                  'class' => 'text-danger small',
+                ]) ?>
+              </div>
+              <div class="mb-3">
+                <label class="form-label">Remark</label>
+                <textarea
+                  name="ServicePayment[remark]"
+                  class="form-control"
+                  rows="2"><?= Html::encode($paymentModel->remark) ?></textarea>
+              </div>
+              <div class="d-grid">
+                <button type="submit" class="btn btn-success">Record payment</button>
+              </div>
+              <?= Html::endForm() ?>
+            <?php endif; ?>
+          </div>
+        </div>
+      <?php elseif ($model->status == \app\models\Service::STATUS_CANCELLED): ?>
+        <div class="card mt-3">
+          <div class="card-body text-center text-danger">
+            Payments are disabled for cancelled services.
+          </div>
+        </div>
+      <?php else: ?>
+        <div class="card mt-3">
+          <div class="card-body text-center text-success">
+            Service has already been settled.
+          </div>
+        </div>
+      <?php endif; ?>
+      <?php if (!empty($payments)): ?>
+        <div class="card mt-3">
+          <div class="card-body">
+            <h6 class="text-muted text-uppercase fw-semibold mb-3">Payment History</h6>
+            <div style="max-height: 260px; overflow: auto;">
+              <table class="table table-borderless table-sm mb-0">
+                <tbody>
+                  <?php foreach ($payments as $payment): ?>
+                    <tr class="border-bottom">
+                      <td>
+                        <div class="small">
+                          <a href="<?= Url::to([
+                                      'service/view',
+                                      'id' => $model->id,
+                                    ]) ?>" class="text-decoration-underline"><?= Html::encode(
+                                                                                $payment->code,
+                                                                              ) ?></a>
+                        </div>
+                        <div>
+                          <strong><?= Html::encode(
+                                    $utils->date($payment->date),
+                                  ) ?></strong>
+                        </div>
+                      </td>
+                      <td class="text-end">
+                        <div><?= Html::encode(
+                                $payment->paymentMethod
+                                  ? $payment->paymentMethod->name
+                                  : '-',
+                              ) ?></div>
+                        <div class="text-primary fw-bold"><?= $utils->dollarFormat(
+                                                            $payment->amount,
+                                                          ) ?></div>
+                      </td>
+                    </tr>
+                    <?php if ($payment->remark): ?>
+                      <tr>
+                        <td colspan="4" class="text-muted small">
+                          <?= nl2br(Html::encode($payment->remark)) ?>
+                        </td>
+                      </tr>
+                    <?php endif; ?>
+                  <?php endforeach; ?>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      <?php endif; ?>
+    </div>
+  </div>
+</div>
+
+<?php
+$printCss = <<<CSS
+@media print {
+  body {
+    font-size: 11px;
+  }
+  
+  .service-view {
+    font-size: 11px;
+  }
+  
+  h1, h2, h3, h4, h5, h6 {
+    font-size: 12px;
+  }
+  
+  .invoice-title {
+    font-size: 18px !important;
+  }
+  
+  .card {
+    border: none;
+    page-break-inside: avoid;
+  }
+  
+  .table {
+    font-size: 10px;
+  }
+  
+  .table th, .table td {
+    padding: 0.25rem !important;
+  }
+  
+  .card-header, .card-body {
+    padding: 0.75rem !important;
+  }
+  
+  .btn, .btn-group {
+    display: none !important;
+  }
+  
+  .d-print-none {
+    display: none !important;
+  }
+  
+  p {
+    margin-bottom: 0.25rem;
+  }
+}
+CSS;
+$this->registerCss($printCss);
+
+$this->registerJs(
+  <<<JS
+$(document).on('click', '.payment-suggestion', function(e) {
+  e.preventDefault();
+  var percent = $(this).data('percent');
+  var balance = parseFloat($('#payment-suggestions').data('balance'));
+  var amount = balance * percent;
+  $('#payment-amount-input').val(amount.toFixed(2));
+});
+
+$('#btn-print-service').on('click', function () {
+  window.print();
+});
+
+
+  // Generate barcode
+  $(document).ready(function() {
+    if (typeof JsBarcode === 'undefined') {
+      console.warn('JsBarcode library not loaded');
+      return;
+    }
+    
+    var invoiceCode = "$model->code";
+    if (invoiceCode && invoiceCode.trim()) {
+      try {
+        JsBarcode('#invoice-barcode', invoiceCode, {
+          format: 'CODE128',
+          width: 1,
+          height: 20,
+          displayValue: false,
+          margin: 1
+        });
+      } catch(e) {
+        console.error('Barcode generation error:', e);
+      }
+    }
+  });
+JS
+);
+?>

@@ -7,6 +7,8 @@ use app\models\Invoice;
 use app\models\InvoiceItem;
 use app\models\Inventory;
 use app\models\PurchaseOrder;
+use app\models\Service;
+use app\models\ServiceItem;
 use DateInterval;
 use DatePeriod;
 use DateTime;
@@ -54,6 +56,7 @@ class ReportController extends Controller
     $start = $startDate;
     $end = $endDate;
     $paidStatuses = [Invoice::STATUS_PAID, Invoice::STATUS_PROCESS];
+    $servicePaidStatuses = [Service::STATUS_PAID, Service::STATUS_PROCESS];
 
     $totalRevenue = (float) Invoice::find()
       ->where(['between', 'date', $start, $end])
@@ -63,6 +66,16 @@ class ReportController extends Controller
     $invoiceCount = (int) Invoice::find()
       ->where(['between', 'date', $start, $end])
       ->andWhere(['IN', 'status', $paidStatuses])
+      ->count();
+
+    $totalServiceRevenue = (float) Service::find()
+      ->where(['between', 'date', $start, $end])
+      ->andWhere(['IN', 'status', $servicePaidStatuses])
+      ->sum('paid_amount');
+
+    $serviceCount = (int) Service::find()
+      ->where(['between', 'date', $start, $end])
+      ->andWhere(['IN', 'status', $servicePaidStatuses])
       ->count();
 
     $totalExpenseOnly = (float) Expense::find()
@@ -91,6 +104,14 @@ class ReportController extends Controller
       ->with('customer')
       ->where(['between', 'date', $start, $end])
       ->andWhere(['IN', 'status', $paidStatuses])
+      ->orderBy(['date' => SORT_DESC])
+      ->limit(5)
+      ->all();
+
+    $recentServices = Service::find()
+      ->with('customer')
+      ->where(['between', 'date', $start, $end])
+      ->andWhere(['IN', 'status', $servicePaidStatuses])
       ->orderBy(['date' => SORT_DESC])
       ->limit(5)
       ->all();
@@ -140,6 +161,18 @@ class ReportController extends Controller
       ->asArray()
       ->all();
 
+    $serviceRevenueByDay = Service::find()
+      ->select([
+        'period' => new Expression('date'),
+        'total' => new Expression('SUM(paid_amount)'),
+      ])
+      ->where(['between', 'date', $start, $end])
+      ->andWhere(['IN', 'status', $servicePaidStatuses])
+      ->groupBy('period')
+      ->orderBy('period')
+      ->asArray()
+      ->all();
+
     $expenseByDay = Expense::find()
       ->select([
         'period' => new Expression('date'),
@@ -165,6 +198,7 @@ class ReportController extends Controller
       ->all();
 
     $revenueMap = ArrayHelper::map($revenueByDay, 'period', 'total');
+    $serviceRevenueMap = ArrayHelper::map($serviceRevenueByDay, 'period', 'total');
     $expenseMap = ArrayHelper::map($expenseByDay, 'period', 'total');
     $poMap = ArrayHelper::map($poByDay, 'period', 'total');
 
@@ -178,29 +212,36 @@ class ReportController extends Controller
     foreach ($periodIterator as $currentDate) {
       $key = $currentDate->format('Y-m-d');
       $revenue = (float) ($revenueMap[$key] ?? 0);
+      $serviceRevenue = (float) ($serviceRevenueMap[$key] ?? 0);
+      $totalRevByDay = $revenue + $serviceRevenue;
       $expense = (float) ($expenseMap[$key] ?? 0);
       $expense += (float) ($poMap[$key] ?? 0);
       $dailyReport[] = [
         'label' => $currentDate->format('d M, Y'),
-        'revenue' => $revenue,
+        'revenue' => $totalRevByDay,
         'expense' => $expense,
-        'net' => $revenue - $expense,
+        'net' => $totalRevByDay - $expense,
       ];
     }
 
+    $totalAllRevenue = $totalRevenue + $totalServiceRevenue;
     $totalExpenses = $totalExpenseOnly + $totalPurchaseOrders;
-    $netProfit = $totalRevenue - $totalExpenses;
+    $netProfit = $totalAllRevenue - $totalExpenses;
 
     return $this->render('financial', [
       'dateRange' => $displayRange,
-      'totalRevenue' => $totalRevenue,
+      'totalRevenue' => $totalAllRevenue,
+      'invoiceRevenue' => $totalRevenue,
+      'serviceRevenue' => $totalServiceRevenue,
       'totalExpenses' => $totalExpenses,
       'netProfit' => $netProfit,
       'invoiceCount' => $invoiceCount,
+      'serviceCount' => $serviceCount,
       'expenseCount' => $expenseCount,
       'poCount' => $poCount,
       'dailyReport' => $dailyReport,
       'recentInvoices' => $recentInvoices,
+      'recentServices' => $recentServices,
       'financialRows' => $financialRows,
     ]);
   }
@@ -471,6 +512,94 @@ class ReportController extends Controller
       'dailySales' => $dailySales,
       'topProducts' => $topProducts,
       'recentInvoices' => $recentInvoices,
+    ]);
+  }
+
+  public function actionService()
+  {
+    $dateRange = Yii::$app->request->get('date_range');
+    $range = $this->resolveDateRange($dateRange);
+    $startDate = $range['start'];
+    $endDate = $range['end'];
+    $displayRange = $range['display'];
+
+    $start = $startDate;
+    $end = $endDate;
+    $paidStatuses = [Service::STATUS_PAID, Service::STATUS_PROCESS];
+
+    $totalServices = (float) Service::find()
+      ->where(['between', 'service.date', $start, $end])
+      ->andWhere(['IN', 'status', $paidStatuses])
+      ->sum('grand_total');
+
+    $serviceCount = (int) Service::find()
+      ->where(['between', 'date', $start, $end])
+      ->andWhere(['IN', 'status', $paidStatuses])
+      ->count();
+
+    $totalUnits = (int) ServiceItem::find()
+      ->alias('service_item')
+      ->leftJoin('service', 'service.id = service_item.service_id')
+      ->where(['between', 'service.date', $start, $end])
+      ->andWhere(['IN', 'service.status', $paidStatuses])
+      ->sum('service_item.quantity');
+
+    // Total margins
+    $totalMargin =
+      (float) (\app\models\Service::find()
+        ->where(['between', 'service.date', $start, $end])
+        ->andWhere(['IN', 'service.status', $paidStatuses])
+        ->sum('grand_total - cost_total') ?? 0);
+
+    $dailyServices = Service::find()
+      ->select([
+        'period' => new Expression('date'),
+        'orders' => new Expression('COUNT(id)'),
+        'total' => new Expression('SUM(grand_total)'),
+        'margins' => new Expression('SUM(grand_total - cost_total)'),
+      ])
+      ->where(['between', 'date', $start, $end])
+      ->andWhere(['IN', 'status', $paidStatuses])
+      ->groupBy('period')
+      ->orderBy(['period' => SORT_DESC])
+      ->asArray()
+      ->all();
+
+    $topServices = ServiceItem::find()
+      ->alias('service_item')
+      ->select([
+        'service_item.name',
+        'quantity' => new Expression('SUM(service_item.quantity)'),
+        'revenue' => new Expression(
+          'SUM(service_item.price * service_item.quantity)',
+        ),
+      ])
+      ->leftJoin('service', 'service.id = service_item.service_id')
+      ->where(['between', 'service.date', $start, $end])
+      ->andWhere(['IN', 'service.status', $paidStatuses])
+      ->groupBy('service_item.name')
+      ->orderBy(['quantity' => SORT_DESC])
+      ->limit(10)
+      ->asArray()
+      ->all();
+
+    $recentServices = Service::find()
+      ->with('customer')
+      ->where(['between', 'date', $start, $end])
+      ->andWhere(['IN', 'status', $paidStatuses])
+      ->orderBy(['date' => SORT_DESC])
+      ->limit(5)
+      ->all();
+
+    return $this->render('service', [
+      'dateRange' => $displayRange,
+      'totalServices' => $totalServices,
+      'serviceCount' => $serviceCount,
+      'totalMargin' => $totalMargin,
+      'totalUnits' => $totalUnits,
+      'dailyServices' => $dailyServices,
+      'topServices' => $topServices,
+      'recentServices' => $recentServices,
     ]);
   }
 }

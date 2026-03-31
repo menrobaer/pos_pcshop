@@ -15,6 +15,7 @@ use Yii;
  * @property string|null $website
  * @property string|null $email
  * @property string|null $terms
+ * @property string|null $terms_service
  * @property int|null $status
  * @property string|null $created_at
  * @property int|null $created_by
@@ -40,7 +41,7 @@ class Outlet extends \yii\db\ActiveRecord
   {
     return [
       [['name'], 'required'],
-      [['address', 'terms'], 'string'],
+      [['address', 'terms', 'terms_service'], 'string'],
       [['status', 'created_by', 'updated_by'], 'integer'],
       [['created_at', 'updated_at'], 'safe'],
       [['image'], 'string', 'max' => 255],
