@@ -76,20 +76,13 @@ $items = $items ?? $model->items;
                             <?php foreach ($items as $index => $item): ?>
                                 <tr data-index="<?= $index ?>">
                                     <td>
-                                        <?= Html::dropDownList(
-                                            "QuotationItem[$index][product_id]",
-                                            $item->product_id,
+                                        <?= Html::textInput(
+                                            "QuotationItem[$index][product_name]",
+                                            $item->product_name,
                                             [
-                                                $item->product_id =>
-                                                $item->product_name .
-                                                    ($item->sku
-                                                        ? ' (' . $item->sku . ')'
-                                                        : ''),
-                                            ],
-                                            [
-                                                'class' =>
-                                                'form-control product-select select2-ajax',
-                                                'prompt' => 'Select Product',
+                                                'class' => 'form-control',
+                                                'placeholder' => 'Enter product name',
+                                                'required' => true,
                                             ],
                                         ) ?>
                                         <?= Html::hiddenInput(
@@ -345,10 +338,7 @@ $('#add-item').on('click', function() {
     var row = `
         <tr data-index="\${itemIndex}">
             <td>
-                <select name="QuotationItem[\${itemIndex}][product_id]" class="form-control product-select select2-ajax">
-                    <option value="">Select Product</option>
-                </select>
-                <input type="hidden" name="QuotationItem[\${itemIndex}][product_name]" class="product-name">
+                <input type="text" name="QuotationItem[\${itemIndex}][product_name]" class="form-control" placeholder="Enter product name" required>
                 <div class="mt-1">
                     <textarea name="QuotationItem[\${itemIndex}][description]" class="form-control form-control-sm description auto-height" rows="4" placeholder="Description"></textarea>
                 </div>

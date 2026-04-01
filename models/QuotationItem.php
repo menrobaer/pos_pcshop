@@ -39,7 +39,7 @@ class QuotationItem extends \yii\db\ActiveRecord
   {
     return [
       [['quotation_id', 'product_id', 'quantity'], 'integer'],
-      [['product_id', 'product_name', 'unit', 'discount_type'], 'required'],
+      [['product_name', 'unit', 'discount_type'], 'required'],
       [['description'], 'string'],
       [['full_price', 'discount', 'cost', 'price'], 'default', 'value' => 0],
       [['full_price', 'discount', 'cost', 'price'], 'number'],
