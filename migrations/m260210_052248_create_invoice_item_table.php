@@ -33,8 +33,8 @@ class m260210_052248_create_invoice_item_table extends Migration
         'discount_type' => $this->string(10)->notNull(),
         'discount' => $this->decimal(10, 2)->notNull()->defaultValue(0),
         'full_price' => $this->decimal(10, 2)->notNull()->defaultValue(0),
-        'cost' => $this->decimal(10, 2)->notNull()->defaultValue(0),
-        'price' => $this->decimal(10, 2)->notNull()->defaultValue(0),
+        'cost' => $this->decimal(10, 2)->defaultValue(0),
+        'price' => $this->decimal(10, 2)->defaultValue(0),
       ],
       $tableOptions,
     );

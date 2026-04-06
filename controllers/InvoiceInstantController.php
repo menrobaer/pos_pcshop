@@ -240,8 +240,10 @@ class InvoiceInstantController extends Controller
           foreach ($items as $itemData) {
             $item = new InvoiceItem();
             $item->invoice_id = $model->id;
+            $item->cost = $item->cost ? floatval($item->cost) : 0;
+            $item->quantity = $item->quantity ? intval($item->quantity) : 0;
             if ($item->load($itemData, '')) {
-              $costTotal += $item->cost * $item->quantity;
+              $costTotal += floatval($item->cost) * intval($item->quantity);
               if (!$item->save(false)) {
                 $errors = implode(
                   '<br>',
@@ -329,8 +331,10 @@ class InvoiceInstantController extends Controller
         foreach ($items as $itemData) {
           $item = new InvoiceItem();
           $item->invoice_id = $model->id;
+          $item->cost = $item->cost ? floatval($item->cost) : 0;
+          $item->quantity = $item->quantity ? intval($item->quantity) : 0;
           if ($item->load($itemData, '')) {
-            $costTotal += $item->cost * $item->quantity;
+            $costTotal += floatval($item->cost) * intval($item->quantity);
             if (!$item->save(false)) {
               $errors = implode(
                 '<br>',
