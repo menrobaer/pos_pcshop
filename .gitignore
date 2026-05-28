@@ -33,3 +33,10 @@ tests/_support/_generated
 /.vagrant
 
 /node_modules
+
+.env
+.env.local
+.env.*.local
+!.env.example
+
+/config
