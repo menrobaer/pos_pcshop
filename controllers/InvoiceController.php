@@ -329,8 +329,7 @@ class InvoiceController extends Controller
     $model = $this->findModel($id);
 
     if (
-      $model->status == Invoice::STATUS_CANCELLED ||
-      $model->status == Invoice::STATUS_PAID
+      $model->status == Invoice::STATUS_CANCELLED
     ) {
       Yii::$app->session->setFlash(
         'error',

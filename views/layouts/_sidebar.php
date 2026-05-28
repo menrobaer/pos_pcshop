@@ -1,10 +1,13 @@
 <?php
 
+use app\models\Outlet;
 use yii\bootstrap5\Html;
 use yii\helpers\Url;
 
 $controller = Yii::$app->controller->id;
 $action = Yii::$app->controller->action->id;
+
+$outlet = Outlet::findOne(1);
 ?>
 <!-- ========== App Menu ========== -->
 <div class="app-menu navbar-menu">
@@ -158,6 +161,47 @@ $action = Yii::$app->controller->action->id;
             </ul>
           </div>
         </li>
+        <?php if($outlet && $outlet->is_website): ?>
+        <?php $isSetting = in_array($controller, [
+          'web-product-model',
+          'web-product-category',
+          'web-product-brand',
+          'web-product-source',
+          'web-product-description',
+        ]); ?>
+        <li class="menu-title"><span>Website</span></li>
+        <li class="nav-item">
+          <a class="nav-link menu-link <?= $controller == 'web-product' ? 'active' : '' ?>" href="<?= Url::to(['web-product/index']) ?>">
+            <i class="ri-apps-2-line"></i> <span>Products</span>
+          </a>
+          <a class="nav-link menu-link <?= $controller == 'web-navigation' ? 'active' : '' ?>" href="<?= Url::to(['web-navigation/index']) ?>">
+            <i class="ri-layout-3-line"></i> <span>Navigation Menu</span>
+          </a>
+          <li class="nav-item">
+          <a class="nav-link menu-link <?= $isSetting ? 'active' : '' ?>" href="#sidebarWebsiteSettings" data-bs-toggle="collapse" role="button" aria-expanded="<?= $isSetting ? 'true' : 'false' ?>" aria-controls="sidebarWebsiteSettings">
+            <i class="ri-settings-2-line"></i> <span>Setting</span>
+          </a>
+          <div class="collapse menu-dropdown <?= $isSetting ? 'show' : '' ?>" id="sidebarWebsiteSettings">
+            <ul class="nav nav-sm flex-column">
+              <li class="nav-item">
+                <a href="<?= Url::to(['web-product-category/index']) ?>" class="nav-link <?= $controller == 'web-product-category' ? 'active' : '' ?>">Product Category</a>
+              </li>
+              <li class="nav-item">
+                <a href="<?= Url::to(['web-product-brand/index']) ?>" class="nav-link <?= $controller == 'web-product-brand' ? 'active' : '' ?>">Product Brand</a>
+              </li>
+              <li class="nav-item">
+                <a href="<?= Url::to(['web-product-model/index']) ?>" class="nav-link <?= $controller == 'web-product-model' ? 'active' : '' ?>">Product Model</a>
+              </li>
+              <li class="nav-item">
+                <a href="<?= Url::to(['web-product-source/index']) ?>" class="nav-link <?= $controller == 'web-product-source' ? 'active' : '' ?>">Product Source</a>
+              </li>
+              <li class="nav-item">
+                <a href="<?= Url::to(['web-product-description/index']) ?>" class="nav-link <?= $controller == 'web-product-description' ? 'active' : '' ?>">Product Description</a>
+              </li>
+            </ul>
+          </div>
+        </li>
+        <?php endif; ?>
       </ul>
     </div>
     <!-- Sidebar -->

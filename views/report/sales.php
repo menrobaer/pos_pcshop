@@ -134,12 +134,13 @@ $this->title = 'Sales Report';
                 <th scope="col">Code</th>
                 <th scope="col">Customer</th>
                 <th scope="col">Amount</th>
+                <th scope="col">Margin</th>
               </tr>
             </thead>
             <tbody>
               <?php if (empty($recentInvoices)): ?>
                 <tr>
-                  <td colspan="3" class="text-center text-muted py-4">No sales in this range</td>
+                  <td colspan="4" class="text-center text-muted py-4">No sales in this range</td>
                 </tr>
               <?php else: ?>
                 <?php foreach ($recentInvoices as $invoice): ?>
@@ -156,6 +157,7 @@ $this->title = 'Sales Report';
                           $invoice->customer ? $invoice->customer->name : 'Walk-in',
                         ) ?></td>
                     <td><?= Utils::dollarFormat($invoice->grand_total) ?></td>
+                    <td><?= Utils::dollarFormat($invoice->grand_total - $invoice->cost_total) ?></td>
                   </tr>
                 <?php endforeach; ?>
               <?php endif; ?>

@@ -90,7 +90,19 @@ class OutletController extends Controller
           }
         }
 
+        $model->signatureFile = UploadedFile::getInstance($model, 'signatureFile');
+        if ($model->signatureFile) {
+          $oldSignature = $model->signature;
+          if ($path = $model->uploadSignature()) {
+            $model->signature = $path;
+            if ($oldSignature && file_exists($oldSignature)) {
+              unlink($oldSignature);
+            }
+          }
+        }
+
         $model->imageFile = null;
+        $model->signatureFile = null;
         if (!$model->save()) {
           throw new \Exception(
             'Failed to update: ' . json_encode($model->getErrors()),

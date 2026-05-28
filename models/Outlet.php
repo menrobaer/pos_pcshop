@@ -21,6 +21,7 @@ use Yii;
  * @property int|null $created_by
  * @property string|null $updated_at
  * @property int|null $updated_by
+ * @property int $is_website
  */
 class Outlet extends \yii\db\ActiveRecord
 {
@@ -32,7 +33,7 @@ class Outlet extends \yii\db\ActiveRecord
     return 'outlet';
   }
 
-  public $imageFile;
+  public $imageFile, $signatureFile;
 
   /**
    * {@inheritdoc}
@@ -42,13 +43,20 @@ class Outlet extends \yii\db\ActiveRecord
     return [
       [['name'], 'required'],
       [['address', 'terms', 'terms_service'], 'string'],
-      [['status', 'created_by', 'updated_by'], 'integer'],
+      [['status', 'created_by', 'updated_by', 'is_website'], 'integer'],
       [['created_at', 'updated_at'], 'safe'],
-      [['image'], 'string', 'max' => 255],
+      [['image', 'signature'], 'string', 'max' => 255],
       [['name', 'phone'], 'string', 'max' => 50],
       [['website', 'email'], 'string', 'max' => 100],
       [
         ['imageFile'],
+        'image',
+        'skipOnEmpty' => true,
+        'extensions' => 'jpg, jpeg, gif, png, webp',
+        'maxSize' => 1024 * 1024 * 2,
+      ],
+      [
+        ['signatureFile'],
         'image',
         'skipOnEmpty' => true,
         'extensions' => 'jpg, jpeg, gif, png, webp',
@@ -65,7 +73,9 @@ class Outlet extends \yii\db\ActiveRecord
     return [
       'id' => 'ID',
       'image' => 'Logo',
+      'signature' => 'Signature',
       'imageFile' => 'Logo Image',
+      'signatureFile' => 'Signature Image',
       'name' => 'Name',
       'address' => 'Address',
       'phone' => 'Phone',
@@ -124,6 +134,38 @@ class Outlet extends \yii\db\ActiveRecord
       $path = $directory . '/' . $fileName;
 
       if ($this->imageFile->saveAs($path)) {
+        return $filePath . '/' . $fileName;
+      }
+    }
+    return false;
+  }
+
+  public function getSignaturePath()
+  {
+    if (!$this->signature || !file_exists($this->signature)) {
+      return null;
+    }
+    return Yii::getAlias('@web') . '/' . $this->signature;
+  }
+
+  public function uploadSignature()
+  {
+    if ($this->validate(['signatureFile']) && $this->signatureFile) {
+      $filePath = 'uploads/outlets/signatures';
+      $directory = Yii::getAlias("@webroot/{$filePath}");
+      if (!is_dir($directory)) {
+        mkdir($directory, 0777, true);
+      }
+      $randomString = Yii::$app->security->generateRandomString(16);
+      $fileName =
+        $this->signatureFile->baseName .
+        '-' .
+        $randomString .
+        '.' .
+        $this->signatureFile->extension;
+      $path = $directory . '/' . $fileName;
+
+      if ($this->signatureFile->saveAs($path)) {
         return $filePath . '/' . $fileName;
       }
     }

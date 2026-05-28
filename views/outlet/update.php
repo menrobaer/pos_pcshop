@@ -36,6 +36,18 @@ $this->params['breadcrumbs'][] = $this->title;
                   'placeholder' => 'Upload Logo',
                 ])
                 ->label(false) ?>
+
+              <?= $form
+                ->field($model, 'signatureFile')
+                ->widget(\app\widgets\ImageUploadWidget::class, [
+                  'imageUrl' =>
+                  $model->isNewRecord ||
+                    empty($model->getSignaturePath())
+                    ? null
+                    : $model->getSignaturePath(),
+                  'placeholder' => 'Upload Signature',
+                ])
+                ->label(false) ?>
             </div>
             <div class="col-md-8">
               <div class="row">

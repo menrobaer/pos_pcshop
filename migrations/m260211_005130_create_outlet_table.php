@@ -15,6 +15,7 @@ class m260211_005130_create_outlet_table extends Migration
     $this->createTable('{{%outlet}}', [
       'id' => $this->primaryKey(),
       'image' => $this->string(255),
+      'signature' => $this->string(255),
       'name' => $this->string(50)->notNull(),
       'address' => $this->text(),
       'phone' => $this->string(50),

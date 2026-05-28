@@ -35,8 +35,18 @@ $utils = Yii::$app->utils;
 <style>
   .invoice-signature .col-3 {
     margin-top: 2rem;
+  }
+
+  .invoice-signature .sig-line {
     height: 4rem;
     border-bottom: 1px solid #333;
+    display: flex;
+    align-items: flex-end;
+    justify-content: center;
+  }
+
+  .invoice-signature .sig-label {
+    margin-top: 0.25rem;
   }
 
   #barcode-container {
@@ -309,8 +319,21 @@ $utils = Yii::$app->utils;
               <?php endif; ?>
 
               <div class="row font-size-sm invoice-signature">
-                <div class="col-3 offset-2 text-center">Customer / អ្នកទិញ</div>
-                <div class="col-3 offset-2 text-center">Sales / អ្នកលក់</div>
+                <div class="col-3 offset-2 text-center">
+                  <div class="sig-line"></div>
+                  <div class="sig-label">Customer / អ្នកទិញ</div>
+                </div>
+                <div class="col-3 offset-2 text-center">
+                  <div class="sig-line">
+                    <?php if ($outlet && $outlet->getSignaturePath()): ?>
+                      <?= Html::img($outlet->getSignaturePath(), [
+                        'style' => 'max-height: 60px; max-width: 120px; object-fit: contain;',
+                        'alt' => 'Signature',
+                      ]) ?>
+                    <?php endif; ?>
+                  </div>
+                  <div class="sig-label">Sales / អ្នកលក់</div>
+                </div>
               </div>
             </div>
           </div>
