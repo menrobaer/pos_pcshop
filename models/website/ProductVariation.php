@@ -118,9 +118,9 @@ class ProductVariation extends ActiveRecord
             return $this->image_url;
         }
 
-        $s3BaseUrl = trim((string) (Yii::$app->params['s3']['baseUrl'] ?? ''), '/');
-        if ($s3BaseUrl !== '') {
-            return $s3BaseUrl . '/' . ltrim($this->image_url, '/');
+        $storageBaseUrl = $this->getStorageBaseUrl();
+        if ($storageBaseUrl !== '') {
+            return $storageBaseUrl . '/' . ltrim($this->image_url, '/');
         }
 
         if (!file_exists(Yii::getAlias('@webroot/' . $this->image_url))) {
@@ -167,7 +167,7 @@ class ProductVariation extends ActiveRecord
 
     private function uploadImageToS3()
     {
-        $config = Yii::$app->params['s3'] ?? [];
+        $config = $this->getStorageConfig();
         $enabled = !empty($config['enabled']);
         $bucket = $config['bucket'] ?? null;
         $region = $config['region'] ?? null;
@@ -179,14 +179,25 @@ class ProductVariation extends ActiveRecord
         }
 
         try {
-            $s3Client = new S3Client([
+            $clientConfig = [
                 'version' => 'latest',
                 'region' => $region,
                 'credentials' => [
                     'key' => $key,
                     'secret' => $secret,
                 ],
-            ]);
+            ];
+
+            $endpoint = $this->resolveStorageEndpoint($config, (string) $bucket);
+            if ($endpoint !== null) {
+                $clientConfig['endpoint'] = $endpoint;
+            }
+
+            if (array_key_exists('usePathStyleEndpoint', $config)) {
+                $clientConfig['use_path_style_endpoint'] = (bool) $config['usePathStyleEndpoint'];
+            }
+
+            $s3Client = new S3Client($clientConfig);
 
             $rootPrefix = trim((string) ($config['prefix'] ?? 'vlc'), '/');
             if ($rootPrefix === '') {
@@ -196,8 +207,8 @@ class ProductVariation extends ActiveRecord
             $safeName = preg_replace('/[^A-Za-z0-9\-_]/', '-', $this->imageFile->baseName);
             $randomString = Yii::$app->security->generateRandomString(10);
             $fileName = $safeName . '-' . $randomString . '.' . $this->imageFile->extension;
-            $variationId = (string) ($this->id ?: 0);
-            $objectKey = $rootPrefix . '/product-variation/' . $variationId . '/' . $fileName;
+            $productId = (string) ($this->product_id ?: ($this->id ?: 0));
+            $objectKey = $rootPrefix . '/product/' . $productId . '/' . $fileName;
 
             $params = [
                 'Bucket' => $bucket,
@@ -218,6 +229,50 @@ class ProductVariation extends ActiveRecord
             Yii::warning('S3 upload failed for ProductVariation: ' . $e->getMessage(), __METHOD__);
             return false;
         }
+    }
+
+    private function getStorageConfig()
+    {
+        $storage = Yii::$app->params['storage'] ?? null;
+        if (is_array($storage)) {
+            return $storage;
+        }
+
+        $s3 = Yii::$app->params['s3'] ?? null;
+        return is_array($s3) ? $s3 : [];
+    }
+
+    private function getStorageBaseUrl()
+    {
+        $config = $this->getStorageConfig();
+        return trim((string) ($config['baseUrl'] ?? ''), '/');
+    }
+
+    private function resolveStorageEndpoint(array $config, string $bucket)
+    {
+        $endpoint = trim((string) ($config['endpoint'] ?? ''));
+        if ($endpoint !== '') {
+            return $endpoint;
+        }
+
+        $baseUrl = trim((string) ($config['baseUrl'] ?? ''));
+        if ($baseUrl === '' || $bucket === '') {
+            return null;
+        }
+
+        $scheme = parse_url($baseUrl, PHP_URL_SCHEME) ?: 'https';
+        $host = parse_url($baseUrl, PHP_URL_HOST);
+        if (!is_string($host)) {
+            return null;
+        }
+
+        $prefix = $bucket . '.';
+        if (stripos($host, $prefix) !== 0) {
+            return null;
+        }
+
+        $rootHost = substr($host, strlen($prefix));
+        return $rootHost === '' ? null : $scheme . '://' . $rootHost;
     }
 
     private function isAbsoluteUrl($path)

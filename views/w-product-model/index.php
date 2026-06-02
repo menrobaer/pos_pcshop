@@ -8,6 +8,7 @@ use yii\widgets\Pjax;
 /** @var yii\web\View $this */
 /** @var app\models\ProductModelSearch $searchModel */
 /** @var yii\data\ActiveDataProvider $dataProvider */
+/** @var array $brands */
 
 $this->title = 'Product Models';
 $this->params['breadcrumbs'][] = $this->title;
@@ -16,8 +17,25 @@ echo \app\widgets\Modal::widget([
   'id' => 'modal-product-model',
   'size' => 'modal-md',
 ]);
+
+$this->registerJsFile('https://code.jquery.com/ui/1.13.1/jquery-ui.min.js', [
+  'depends' => [\yii\web\JqueryAsset::class],
+]);
+
+$isBrandFiltered = !empty($searchModel->brand_id);
 ?>
 <div class="product-model-index">
+  <style>
+    #table-product-model-list tbody tr {
+      cursor: <?= $isBrandFiltered ? 'move' : 'default' ?>;
+    }
+
+    .drop-placeholder {
+      border: 1px dashed #adb5bd;
+      background: #f8f9fa;
+      height: 44px;
+    }
+  </style>
   <?php Pjax::begin(['id' => 'product-model-pjax-container']); ?>
   <div class="card">
     <div class="card-body">
@@ -43,6 +61,7 @@ echo \app\widgets\Modal::widget([
             <div class="d-flex justify-content-sm-end">
               <?= $this->render('_search', [
                 'searchModel' => $searchModel,
+                'brands' => $brands,
               ]) ?>
             </div>
           </div>
@@ -55,6 +74,12 @@ echo \app\widgets\Modal::widget([
           'class' =>
           'table table-hover table-striped align-middle table-nowrap mb-0',
         ],
+        'rowOptions' => function ($model) {
+          return [
+            'data-id' => $model->id,
+            'data-brand-id' => $model->brand_id,
+          ];
+        },
         'layout' => "
               <div class='table-responsive'>
                   {items}
@@ -76,8 +101,27 @@ echo \app\widgets\Modal::widget([
           'linkOptions' => ['class' => 'page-link', 'data-pjax' => 1],
         ],
         'columns' => [
+          [
+            'header' => '',
+            'format' => 'raw',
+            'contentOptions' => ['style' => 'width: 40px'],
+            'value' => function () use ($isBrandFiltered) {
+              if (!$isBrandFiltered) {
+                return '<i class="ri-drag-move-2-fill text-muted opacity-50" title="Filter by brand to enable sorting"></i>';
+              }
+              return '<i class="ri-drag-move-2-fill text-muted"></i>';
+            },
+          ],
           ['class' => 'yii\grid\SerialColumn'],
           'name',
+          [
+            'attribute' => 'brand_id',
+            'label' => 'Brand',
+            'value' => function ($model) {
+              return $model->brand ? $model->brand->name : '-';
+            },
+          ],
+          'sort',
           [
             'attribute' => 'status',
             'format' => 'raw',
@@ -143,3 +187,93 @@ echo \app\widgets\Modal::widget([
   </div>
   <?php Pjax::end(); ?>
 </div>
+
+<?php
+$dependentUrl = Url::to(['dependent']);
+
+$script = <<<JS
+function initProductModelSortable() {
+  var selectedBrand = $('#productmodelsearch-brand_id').val();
+  var sortableEnabled = selectedBrand !== '' && selectedBrand !== null && typeof selectedBrand !== 'undefined';
+  var tableBody = $('#table-product-model-list tbody');
+  if (!tableBody.length || typeof tableBody.sortable !== 'function') {
+    return;
+  }
+
+  if (tableBody.data('ui-sortable')) {
+    tableBody.sortable('destroy');
+  }
+
+  var hasNullBrand = false;
+  $('#table-product-model-list tbody tr[data-id]').each(function () {
+    var rowBrandId = $(this).attr('data-brand-id');
+    if (rowBrandId === '' || rowBrandId === null || typeof rowBrandId === 'undefined') {
+      hasNullBrand = true;
+      return false;
+    }
+  });
+
+  if (hasNullBrand) {
+    $('#table-product-model-list tbody tr').css('cursor', 'default');
+  }
+
+  if (!sortableEnabled || hasNullBrand) {
+    return;
+  }
+
+  $('#table-product-model-list tbody tr').css('cursor', 'move');
+
+  tableBody.sortable({
+    placeholder: 'drop-placeholder',
+    helper: function (e, tr) {
+      var originalCells = tr.children();
+      var helper = tr.clone();
+      helper.children().each(function (index) {
+        $(this).width(originalCells.eq(index).width());
+      });
+      return helper;
+    },
+    stop: function () {
+      var orderArr = [];
+      $('#table-product-model-list tbody tr[data-id]').each(function () {
+        orderArr.push($(this).data('id'));
+      });
+
+      orderArr = $.grep(orderArr, function (value) {
+        return value !== '' && value !== null;
+      });
+
+      if (!orderArr.length) {
+        return;
+      }
+
+      $.ajax({
+        url: '$dependentUrl',
+        type: 'post',
+        dataType: 'json',
+        data: {
+          action: 'update_order',
+          brand_id: selectedBrand,
+          orderArr: orderArr
+        },
+        success: function (response) {
+          if (response && response.status === 'saved') {
+            $.pjax.reload({container: '#product-model-pjax-container', async: false});
+          }
+        }
+      });
+    }
+  });
+
+  tableBody.disableSelection();
+}
+
+initProductModelSortable();
+
+$(document).on('pjax:end', '#product-model-pjax-container', function () {
+  initProductModelSortable();
+});
+JS;
+
+$this->registerJs($script);
+?>

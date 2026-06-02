@@ -8,6 +8,7 @@ use Yii;
 use yii\web\Controller;
 use yii\web\NotFoundHttpException;
 use yii\filters\VerbFilter;
+use yii\web\UploadedFile;
 
 /**
  * WebProductBrandController implements the CRUD actions for ProductBrand model.
@@ -72,6 +73,13 @@ class WebProductBrandController extends Controller
     $model->status = 1;
 
     if ($model->load(Yii::$app->request->post())) {
+      $model->imageFile = UploadedFile::getInstance($model, 'imageFile');
+      if ($model->imageFile) {
+        if ($path = $model->uploadImage()) {
+          $model->image_url = $path;
+        }
+      }
+      $model->imageFile = null;
       if ($model->save()) {
         try {
           Yii::$app->utils::insertActivityLog([
@@ -100,6 +108,13 @@ class WebProductBrandController extends Controller
     $model = $this->findModel($id);
 
     if ($model->load(Yii::$app->request->post())) {
+      $model->imageFile = UploadedFile::getInstance($model, 'imageFile');
+      if ($model->imageFile) {
+        if ($path = $model->uploadImage()) {
+          $model->image_url = $path;
+        }
+      }
+      $model->imageFile = null;
       if ($model->save()) {
         try {
           Yii::$app->utils::insertActivityLog([

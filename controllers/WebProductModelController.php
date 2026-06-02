@@ -4,16 +4,35 @@ namespace app\controllers;
 
 use app\models\website\ProductModel;
 use app\models\website\ProductModelSearch;
+use app\models\website\ProductBrand;
 use Yii;
+use yii\base\Exception;
 use yii\web\Controller;
 use yii\web\NotFoundHttpException;
 use yii\filters\VerbFilter;
-
+use yii\helpers\ArrayHelper;
+use yii\web\UploadedFile;
 /**
  * WebProductModelController implements the CRUD actions for ProductModel model.
  */
 class WebProductModelController extends Controller
 {
+  protected function getBrands()
+  {
+    return ArrayHelper::map(
+      ProductBrand::find()
+        ->orderBy(['name' => SORT_ASC])
+        ->all(),
+      'id',
+      'name',
+    );
+  }
+
+  protected function getWebsiteDb()
+  {
+    return ProductModel::getDb();
+  }
+
   /**
    * @inheritDoc
    */
@@ -35,6 +54,7 @@ class WebProductModelController extends Controller
           'class' => VerbFilter::class,
           'actions' => [
             'delete' => ['POST'],
+            'dependent' => ['POST'],
           ],
         ],
       ]
@@ -60,6 +80,7 @@ class WebProductModelController extends Controller
     return $this->render('index', [
       'searchModel' => $searchModel,
       'dataProvider' => $dataProvider,
+      'brands' => $this->getBrands(),
     ]);
   }
 
@@ -72,6 +93,17 @@ class WebProductModelController extends Controller
     $model->status = 1;
 
     if ($model->load(Yii::$app->request->post())) {
+      $model->imageFile = UploadedFile::getInstance($model, 'imageFile');
+      if ($model->imageFile) {
+        if ($path = $model->uploadImage()) {
+          $model->image_url = $path;
+        }
+      }
+      $model->imageFile = null;
+      if (empty($model->sort)) {
+        $maxSort = ProductModel::find()->max('sort');
+        $model->sort = ((int) $maxSort) + 1;
+      }
       if ($model->save()) {
         try {
           Yii::$app->utils::insertActivityLog([
@@ -89,6 +121,7 @@ class WebProductModelController extends Controller
 
     return $this->renderAjax('_form', [
       'model' => $model,
+      'brands' => $this->getBrands(),
     ]);
   }
 
@@ -100,6 +133,13 @@ class WebProductModelController extends Controller
     $model = $this->findModel($id);
 
     if ($model->load(Yii::$app->request->post())) {
+      $model->imageFile = UploadedFile::getInstance($model, 'imageFile');
+      if ($model->imageFile) {
+        if ($path = $model->uploadImage()) {
+          $model->image_url = $path;
+        }
+      }
+      $model->imageFile = null;
       if ($model->save()) {
         try {
           Yii::$app->utils::insertActivityLog([
@@ -112,7 +152,7 @@ class WebProductModelController extends Controller
         }
         Yii::$app->session->setFlash(
           'success',
-          'Category Updated Successfully',
+          'Model Updated Successfully',
         );
         return $this->redirect(Yii::$app->request->referrer);
       }
@@ -120,6 +160,7 @@ class WebProductModelController extends Controller
 
     return $this->renderAjax('_form', [
       'model' => $model,
+      'brands' => $this->getBrands(),
     ]);
   }
 
@@ -144,12 +185,55 @@ class WebProductModelController extends Controller
     if (Yii::$app->request->isAjax) {
       return $this->asJson([
         'success' => true,
-        'message' => 'Category deleted successfully.',
+        'message' => 'Model deleted successfully.',
       ]);
     }
 
-    Yii::$app->session->setFlash('success', 'Category Deleted Successfully');
+    Yii::$app->session->setFlash('success', 'Model Deleted Successfully');
     return $this->redirect(['index']);
+  }
+
+  public function actionDependent()
+  {
+    if (!$this->request->isAjax || $this->request->post('action') !== 'update_order') {
+      return $this->asJson(['status' => 'failed']);
+    }
+
+    $brandId = (int) $this->request->post('brand_id', 0);
+    if ($brandId < 1) {
+      return $this->asJson(['status' => 'failed']);
+    }
+
+    $orderArr = (array) Yii::$app->request->post('orderArr', []);
+    if (empty($orderArr)) {
+      return $this->asJson(['status' => 'failed']);
+    }
+
+    $transaction = $this->getWebsiteDb()->beginTransaction();
+    try {
+      foreach ($orderArr as $index => $id) {
+        $model = ProductModel::findOne((int) $id);
+        if (!$model) {
+          throw new Exception('Model not found: ' . $id);
+        }
+        if ($model->brand_id === null) {
+          throw new Exception('Model brand_id is null: ' . $id);
+        }
+        if ((int) $model->brand_id !== $brandId) {
+          throw new Exception('Invalid brand scope for model: ' . $id);
+        }
+        $model->sort = $index + 1;
+        if (!$model->save(false, ['sort'])) {
+          throw new Exception('Failed to save sort: ' . $id);
+        }
+      }
+
+      $transaction->commit();
+      return $this->asJson(['status' => 'saved']);
+    } catch (Exception $e) {
+      $transaction->rollBack();
+      return $this->asJson(['status' => 'failed']);
+    }
   }
 
   protected function findModel($id)

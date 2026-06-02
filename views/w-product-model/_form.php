@@ -4,15 +4,36 @@ use yii\helpers\Html;
 use yii\widgets\ActiveForm;
 
 /** @var yii\web\View $this */
-/** @var app\models\ProductBrand $model */
+/** @var app\models\website\ProductModel $model */
 /** @var yii\widgets\ActiveForm $form */
+/** @var array $brands */
 ?>
 
 <div class="product-model-form">
 
-  <?php $form = ActiveForm::begin(); ?>
+  <?php $form = ActiveForm::begin(['options' => ['enctype' => 'multipart/form-data']]); ?>
+
+  <h6>Photo</h6>
+  <div class="row">
+    <div class="col-md-12">
+      <?= $form
+        ->field($model, 'imageFile')
+        ->widget(\app\widgets\ImageUploadWidget::class, [
+          'imageUrl' =>
+            $model->isNewRecord || empty($model->getImagePath())
+              ? null
+              : $model->getImagePath(),
+        ])
+        ->label(false) ?>
+    </div>
+  </div>
 
   <?= $form->field($model, 'name')->textInput(['maxlength' => true]) ?>
+
+  <?= $form->field($model, 'brand_id')->dropDownList($brands, [
+    'class' => 'form-select has-select2',
+    'prompt' => 'Select Brand',
+  ]) ?>
 
   <?= $form
     ->field($model, 'status', [

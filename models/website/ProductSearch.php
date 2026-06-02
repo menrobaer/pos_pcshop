@@ -91,18 +91,21 @@ class ProductSearch extends Product
             'available' => $this->available,
         ]);
 
-        // Fuzzy filtering conditions: Partial matches for names, codes, and strings
-        $query->andFilterWhere(['like', 'source', $this->source])
-            ->andFilterWhere(['like', 'sku', $this->sku])
-            ->andFilterWhere(['like', 'code', $this->code])
-            ->andFilterWhere(['like', 'slug', $this->slug])
-            ->andFilterWhere(['like', 'name', $this->name])
-            ->andFilterWhere(['like', 'full_price', $this->full_price])
-            ->andFilterWhere(['like', 'image_url', $this->image_url])
-            ->andFilterWhere(['like', 'warranty', $this->warranty])
-            ->andFilterWhere(['like', 'description', $this->description])
-            ->andFilterWhere(['like', 'free', $this->free])
-            ->andFilterWhere(['like', 'stock', $this->stock]);
+        // Global matching: one keyword can match any searchable text field.
+        $globalSearch = trim((string) $this->globalSearch);
+        if ($globalSearch !== '') {
+            $query->andWhere([
+                'or',
+                ['like', 'sku', $globalSearch],
+                ['like', 'code', $globalSearch],
+                ['like', 'slug', $globalSearch],
+                ['like', 'name', $globalSearch],
+                ['like', 'warranty', $globalSearch],
+                ['like', 'description', $globalSearch],
+                ['like', 'free', $globalSearch],
+                ['like', 'stock', $globalSearch],
+            ]);
+        }
 
         return $dataProvider;
     }

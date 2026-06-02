@@ -144,6 +144,7 @@ if (empty($postedTypeIds) && empty($postedValues)) {
       </div>
     <?php endforeach; ?>
   </div>
+  <?= $form->field($modelVariation, 'description')->textArea(['rows' => 5]) ?>
 </div>
 
 <?php

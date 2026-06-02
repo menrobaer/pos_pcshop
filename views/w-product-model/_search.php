@@ -2,6 +2,9 @@
 
 use yii\widgets\ActiveForm;
 
+/** @var app\models\website\ProductModelSearch $searchModel */
+/** @var array $brands */
+
 $form = ActiveForm::begin([
   'action' => ['index'],
   'method' => 'get',
@@ -11,6 +14,19 @@ $form = ActiveForm::begin([
   ],
 ]);
 ?>
+<?= $form
+  ->field($searchModel, 'brand_id', [
+    'options' => ['class' => 'd-flex align-items-center gap-2'],
+  ])
+  ->dropDownList(
+    $brands,
+    [
+      'prompt' => 'All',
+      'class' => 'form-select',
+      'onchange' => '$(this.form).trigger("submit")',
+    ],
+  )
+  ->label('Brand') ?>
 <?= $form
   ->field($searchModel, 'status', [
     'options' => ['class' => 'd-flex align-items-center gap-2'],

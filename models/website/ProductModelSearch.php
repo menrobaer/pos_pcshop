@@ -17,7 +17,7 @@ class ProductModelSearch extends ProductModel
     {
         return [
             // Strict integer filter for the primary key
-            [['id','status'], 'integer'],
+            [['id','status','brand_id','sort'], 'integer'],
             
             // Textual filters for fuzzy matching
             [['name', 'image_url'], 'safe'],
@@ -50,7 +50,8 @@ class ProductModelSearch extends ProductModel
             'query' => $query,
             'sort' => [
                 'defaultOrder' => [
-                    'name' => SORT_ASC, // Alphabetical order by default
+                    'sort' => SORT_ASC,
+                    'id' => SORT_ASC,
                 ]
             ],
             'pagination' => [
@@ -69,11 +70,12 @@ class ProductModelSearch extends ProductModel
         // Grid filtering conditions: Strict matches
         $query->andFilterWhere([
             'id' => $this->id,
+            'brand_id' => $this->brand_id,
         ]);
 
         // Fuzzy filtering conditions: Partial matches
         $query->andFilterWhere(['like', 'name', $this->name]);
-         $query->andFilterWhere(['status' => $this->status]);
+        $query->andFilterWhere(['status' => $this->status]);
 
         return $dataProvider;
     }

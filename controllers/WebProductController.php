@@ -240,6 +240,8 @@ class WebProductController extends Controller
         if ($modelVariation->imageFile) {
           if ($path = $modelVariation->uploadImage()) {
             $modelVariation->image_url = $path;
+          } else {
+            throw new Exception('Failed to upload variation image to S3. Please check S3 credentials and bucket permissions.');
           }
         }
         $modelVariation->imageFile = null;
@@ -299,6 +301,8 @@ class WebProductController extends Controller
         if ($modelVariation->imageFile) {
           if ($path = $modelVariation->uploadImage()) {
             $modelVariation->image_url = $path;
+          } else {
+            throw new Exception('Failed to upload variation image to S3. Please check S3 credentials and bucket permissions.');
           }
         }
         $modelVariation->imageFile = null;
@@ -346,6 +350,8 @@ class WebProductController extends Controller
         if ($modelVariation->imageFile) {
           if ($path = $modelVariation->uploadImage()) {
             $modelVariation->image_url = $path;
+          } else {
+            throw new Exception('Failed to upload variation image to S3. Please check S3 credentials and bucket permissions.');
           }
         }
         $modelVariation->imageFile = null;
@@ -399,6 +405,8 @@ class WebProductController extends Controller
         if ($modelVariation->imageFile) {
           if ($path = $modelVariation->uploadImage()) {
             $modelVariation->image_url = $path;
+          } else {
+            throw new Exception('Failed to upload variation image to S3. Please check S3 credentials and bucket permissions.');
           }
         }
         $modelVariation->imageFile = null;

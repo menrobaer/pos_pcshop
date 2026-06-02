@@ -15,7 +15,9 @@ use yii\db\ActiveRecord;
  */
 class ProductBrand extends ActiveRecord
 {
-     const STATUS_DELETED = 10;
+    public $imageFile;
+
+    const STATUS_DELETED = 10;
     const STATUS_ACTIVE = 1;
     const STATUS_INACTIVE = 0;
     /**
@@ -44,10 +46,10 @@ class ProductBrand extends ActiveRecord
     {
         return [
             [['name'], 'required'],
-            // String length validations based on column lengths
             [['name'], 'string', 'max' => 50],
             [['image_url'], 'string', 'max' => 255],
             [['status'], 'integer'],
+            [['imageFile'], 'image', 'skipOnEmpty' => true, 'extensions' => 'jpg, jpeg, gif, png, webp', 'maxSize' => 1024 * 1024 * 2],
         ];
     }
 

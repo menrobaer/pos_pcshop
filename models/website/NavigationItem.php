@@ -128,7 +128,7 @@ class NavigationItem extends \yii\db\ActiveRecord
 
     private function uploadImageToS3()
     {
-        $config = Yii::$app->params['s3'] ?? [];
+        $config = $this->getStorageConfig();
         $enabled = !empty($config['enabled']);
         $bucket = $config['bucket'] ?? null;
         $region = $config['region'] ?? null;
@@ -140,14 +140,25 @@ class NavigationItem extends \yii\db\ActiveRecord
         }
 
         try {
-            $s3Client = new S3Client([
+            $clientConfig = [
                 'version' => 'latest',
                 'region' => $region,
                 'credentials' => [
                     'key' => $key,
                     'secret' => $secret,
                 ],
-            ]);
+            ];
+
+            $endpoint = $this->resolveStorageEndpoint($config, (string) $bucket);
+            if ($endpoint !== null) {
+                $clientConfig['endpoint'] = $endpoint;
+            }
+
+            if (array_key_exists('usePathStyleEndpoint', $config)) {
+                $clientConfig['use_path_style_endpoint'] = (bool) $config['usePathStyleEndpoint'];
+            }
+
+            $s3Client = new S3Client($clientConfig);
 
             $rootPrefix = trim((string) ($config['prefix'] ?? 'vlc'), '/');
             if ($rootPrefix === '') {
@@ -191,9 +202,9 @@ class NavigationItem extends \yii\db\ActiveRecord
             return $this->image_url;
         }
 
-        $s3BaseUrl = trim((string) (Yii::$app->params['s3']['baseUrl'] ?? ''), '/');
-        if ($s3BaseUrl !== '') {
-            return $s3BaseUrl . '/' . ltrim($this->image_url, '/');
+        $storageBaseUrl = $this->getStorageBaseUrl();
+        if ($storageBaseUrl !== '') {
+            return $storageBaseUrl . '/' . ltrim($this->image_url, '/');
         }
 
         if (!file_exists(Yii::getAlias('@webroot/' . $this->image_url))) {
@@ -206,6 +217,50 @@ class NavigationItem extends \yii\db\ActiveRecord
     private function isAbsoluteUrl($path)
     {
         return preg_match('/^https?:\/\//i', (string) $path) === 1;
+    }
+
+    private function getStorageConfig()
+    {
+        $storage = Yii::$app->params['storage'] ?? null;
+        if (is_array($storage)) {
+            return $storage;
+        }
+
+        $s3 = Yii::$app->params['s3'] ?? null;
+        return is_array($s3) ? $s3 : [];
+    }
+
+    private function getStorageBaseUrl()
+    {
+        $config = $this->getStorageConfig();
+        return trim((string) ($config['baseUrl'] ?? ''), '/');
+    }
+
+    private function resolveStorageEndpoint(array $config, string $bucket)
+    {
+        $endpoint = trim((string) ($config['endpoint'] ?? ''));
+        if ($endpoint !== '') {
+            return $endpoint;
+        }
+
+        $baseUrl = trim((string) ($config['baseUrl'] ?? ''));
+        if ($baseUrl === '' || $bucket === '') {
+            return null;
+        }
+
+        $scheme = parse_url($baseUrl, PHP_URL_SCHEME) ?: 'https';
+        $host = parse_url($baseUrl, PHP_URL_HOST);
+        if (!is_string($host)) {
+            return null;
+        }
+
+        $prefix = $bucket . '.';
+        if (stripos($host, $prefix) !== 0) {
+            return null;
+        }
+
+        $rootHost = substr($host, strlen($prefix));
+        return $rootHost === '' ? null : $scheme . '://' . $rootHost;
     }
 
     public function getData()

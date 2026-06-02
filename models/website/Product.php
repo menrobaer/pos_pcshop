@@ -223,9 +223,9 @@ class Product extends ActiveRecord
             return $path;
         }
 
-        $s3BaseUrl = trim((string) (Yii::$app->params['s3']['baseUrl'] ?? ''), '/');
-        if ($s3BaseUrl !== '') {
-            return $s3BaseUrl . '/' . ltrim($path, '/');
+        $storageBaseUrl = $this->getStorageBaseUrl();
+        if ($storageBaseUrl !== '') {
+            return $storageBaseUrl . '/' . ltrim($path, '/');
         }
 
         if (!file_exists(Yii::getAlias('@webroot/' . $path))) {
@@ -238,5 +238,20 @@ class Product extends ActiveRecord
     private function isAbsoluteUrl($path)
     {
         return preg_match('/^https?:\/\//i', (string) $path) === 1;
+    }
+
+    private function getStorageBaseUrl()
+    {
+        $storage = Yii::$app->params['storage'] ?? null;
+        if (is_array($storage)) {
+            return trim((string) ($storage['baseUrl'] ?? ''), '/');
+        }
+
+        $s3 = Yii::$app->params['s3'] ?? null;
+        if (is_array($s3)) {
+            return trim((string) ($s3['baseUrl'] ?? ''), '/');
+        }
+
+        return '';
     }
 }
