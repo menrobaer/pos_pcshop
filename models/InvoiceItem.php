@@ -46,7 +46,8 @@ class InvoiceItem extends \yii\db\ActiveRecord
       [['description'], 'string'],
       [['full_price', 'discount', 'cost', 'price'], 'number'],
       [['product_name'], 'string', 'max' => 100],
-      [['sku', 'serial'], 'string', 'max' => 50],
+      [['sku'], 'string', 'max' => 50],
+      [['serial'], 'string', 'max' => 500],
       [['unit'], 'string', 'max' => 20],
       [['discount_type'], 'string', 'max' => 10],
     ];

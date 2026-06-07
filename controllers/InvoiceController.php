@@ -269,10 +269,12 @@ class InvoiceController extends Controller
 
               // remove serial from product variation
               if (!empty($item->serial)) {
-                \app\models\ProductVariation::deleteAll([
-                  'product_id' => $item->product_id,
-                  'serial' => $item->serial,
-                ]);
+                foreach ($this->extractSerials($item->serial) as $serial) {
+                  \app\models\ProductVariation::deleteAll([
+                    'product_id' => $item->product_id,
+                    'serial' => $serial,
+                  ]);
+                }
               }
             }
           }
@@ -357,11 +359,13 @@ class InvoiceController extends Controller
 
           // Restore variation if it was removed
           if (!empty($oldItem->serial)) {
-            if (!\app\models\ProductVariation::find()->where(['product_id' => $oldItem->product_id, 'serial' => $oldItem->serial])->exists()) {
-              $v = new \app\models\ProductVariation();
-              $v->product_id = $oldItem->product_id;
-              $v->serial = $oldItem->serial;
-              $v->save(false);
+            foreach ($this->extractSerials($oldItem->serial) as $serial) {
+              if (!\app\models\ProductVariation::find()->where(['product_id' => $oldItem->product_id, 'serial' => $serial])->exists()) {
+                $v = new \app\models\ProductVariation();
+                $v->product_id = $oldItem->product_id;
+                $v->serial = $serial;
+                $v->save(false);
+              }
             }
           }
         }
@@ -396,10 +400,12 @@ class InvoiceController extends Controller
 
             // remove serial from product variation
             if (!empty($item->serial)) {
-              \app\models\ProductVariation::deleteAll([
-                'product_id' => $item->product_id,
-                'serial' => $item->serial,
-              ]);
+              foreach ($this->extractSerials($item->serial) as $serial) {
+                \app\models\ProductVariation::deleteAll([
+                  'product_id' => $item->product_id,
+                  'serial' => $serial,
+                ]);
+              }
             }
           }
         }
@@ -461,11 +467,13 @@ class InvoiceController extends Controller
 
         // Restore variations
         if (!empty($item->serial)) {
-          if (!\app\models\ProductVariation::find()->where(['product_id' => $item->product_id, 'serial' => $item->serial])->exists()) {
-            $v = new \app\models\ProductVariation();
-            $v->product_id = $item->product_id;
-            $v->serial = $item->serial;
-            $v->save(false);
+          foreach ($this->extractSerials($item->serial) as $serial) {
+            if (!\app\models\ProductVariation::find()->where(['product_id' => $item->product_id, 'serial' => $serial])->exists()) {
+              $v = new \app\models\ProductVariation();
+              $v->product_id = $item->product_id;
+              $v->serial = $serial;
+              $v->save(false);
+            }
           }
         }
       }
@@ -562,11 +570,13 @@ class InvoiceController extends Controller
 
       // Restore variations
       if (!empty($item->serial)) {
-        if (!\app\models\ProductVariation::find()->where(['product_id' => $item->product_id, 'serial' => $item->serial])->exists()) {
-          $v = new \app\models\ProductVariation();
-          $v->product_id = $item->product_id;
-          $v->serial = $item->serial;
-          $v->save(false);
+        foreach ($this->extractSerials($item->serial) as $serial) {
+          if (!\app\models\ProductVariation::find()->where(['product_id' => $item->product_id, 'serial' => $serial])->exists()) {
+            $v = new \app\models\ProductVariation();
+            $v->product_id = $item->product_id;
+            $v->serial = $serial;
+            $v->save(false);
+          }
         }
       }
     }
@@ -777,6 +787,8 @@ class InvoiceController extends Controller
       $query = \app\models\ProductVariation::find()
         ->alias('pv')
         ->joinWith('product p', true, 'INNER JOIN')
+        ->leftJoin('purchase_order_item poi', "poi.product_id = pv.product_id AND FIND_IN_SET(pv.serial, REPLACE(poi.serial, ' ', '')) > 0")
+        ->addSelect(['pv.*', 'purchase_order_item_id' => 'poi.id'])
         ->where(['like', 'pv.serial', $q])
         ->orWhere(['like', 'p.name', $q])
         ->orWhere(['like', 'p.sku', $q])
@@ -796,11 +808,26 @@ class InvoiceController extends Controller
             'price' => $row->product->price,
             'cost' => $row->product->cost,
             'description' => $row->product->description,
+            'purchase_order_item_id' => $row->purchase_order_item_id ?? null,
           ],
         ];
       }
       $out['results'] = $results;
     }
     return $out;
+  }
+
+  protected function extractSerials($serialValue)
+  {
+    if (empty($serialValue)) {
+      return [];
+    }
+
+    $parts = array_map('trim', explode(',', (string) $serialValue));
+    $parts = array_filter($parts, function ($serial) {
+      return $serial !== '';
+    });
+
+    return array_values(array_unique($parts));
   }
 }

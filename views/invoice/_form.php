@@ -297,6 +297,106 @@ $productSearchUrl = Url::to(['invoice/product-search']);
 $js = <<<JS
 var itemIndex = $('#items-table tbody tr').length;
 
+function splitSerials(serialValue) {
+    if (!serialValue) {
+        return [];
+    }
+
+    return serialValue
+        .toString()
+        .split(',')
+        .map(function (s) { return $.trim(s); })
+        .filter(function (s) { return s !== ''; });
+}
+
+function mergeSerialValues(existingSerials, newSerial) {
+    var list = splitSerials(existingSerials);
+    var candidate = $.trim(newSerial || '');
+
+    if (candidate && list.indexOf(candidate) === -1) {
+        list.push(candidate);
+    }
+
+    return list.join(', ');
+}
+
+function getSelectionGroupKey(data) {
+    if (data.purchase_order_item_id) {
+        return 'poi:' + data.purchase_order_item_id;
+    }
+
+    var normalizedCost = parseFloat(data.cost || 0).toFixed(2);
+    return 'fallback:' + data.id + ':' + normalizedCost;
+}
+
+function getRowGroupKey(row) {
+    var poItemId = row.attr('data-po-item-id');
+    if (poItemId) {
+        return 'poi:' + poItemId;
+    }
+
+    var productId = row.find('.product-select').val();
+    var cost = parseFloat(row.find('.cost').val() || 0).toFixed(2);
+    if (!productId) {
+        return null;
+    }
+
+    return 'fallback:' + productId + ':' + cost;
+}
+
+function removeRowIfEmpty(row) {
+    var hasProduct = !!row.find('.product-select').val();
+    var hasSerial = splitSerials(row.find('.serial').val()).length > 0;
+    var hasDescription = $.trim(row.find('.description').val() || '') !== '';
+
+    if (!hasProduct && !hasSerial && !hasDescription && $('#items-table tbody tr').length > 1) {
+        row.remove();
+    }
+}
+
+function findGroupedRow(currentRow, data) {
+    var groupKey = getSelectionGroupKey(data);
+    if (!groupKey) {
+        return $();
+    }
+
+    return $('#items-table tbody tr').filter(function () {
+        var row = $(this);
+        if (row.is(currentRow)) {
+            return false;
+        }
+
+        return getRowGroupKey(row) === groupKey;
+    }).first();
+}
+
+function populateRowFromSelection(row, data) {
+    row.find('.product-name').val(data.name || '');
+    row.find('.sku').val(data.sku || '');
+    row.find('.full-price').val(data.price || 0);
+    row.find('.price').val(data.price || 0);
+    row.find('.cost').val(data.cost || 0);
+    row.find('.description').val(data.description || '').trigger('input');
+
+    if (data.purchase_order_item_id) {
+        row.attr('data-po-item-id', data.purchase_order_item_id);
+    } else {
+        row.removeAttr('data-po-item-id');
+    }
+}
+
+function mergeSelectionIntoRow(row, data) {
+    populateRowFromSelection(row, data);
+
+    var mergedSerial = mergeSerialValues(row.find('.serial').val(), data.serial || '');
+    row.find('.serial').val(mergedSerial || '-');
+
+    var serialCount = splitSerials(mergedSerial).length;
+    if (serialCount > 0) {
+        row.find('.qty').val(serialCount);
+    }
+}
+
 function initProductSelect2(element) {
     element.select2({
         ajax: {
@@ -320,13 +420,34 @@ function initProductSelect2(element) {
     }).on('select2:select', function (e) {
         var data = e.params.data.data;
         var row = $(this).closest('tr');
-        row.find('.product-name').val(data.name);
-        row.find('.sku').val(data.sku);
-        row.find('.full-price').val(data.price);
-        row.find('.price').val(data.price);
-        row.find('.cost').val(data.cost);
-        row.find('.serial').val(data.serial || '-');
-        row.find('.description').val(data.description || '').trigger('input');
+
+        var groupedRow = findGroupedRow(row, data);
+        if (groupedRow.length) {
+            var existingSerials = splitSerials(groupedRow.find('.serial').val());
+            var selectedSerial = $.trim(data.serial || '');
+
+            if (selectedSerial && existingSerials.indexOf(selectedSerial) !== -1) {
+                alert('Serial already added to this invoice item.');
+                $(this).val(null).trigger('change');
+                return;
+            }
+
+            mergeSelectionIntoRow(groupedRow, data);
+
+            $(this).val(null).trigger('change');
+            row.find('.serial').val('');
+            row.find('.product-name').val('');
+            row.find('.sku').val('');
+            row.find('.price').val('');
+            row.find('.full-price').val('');
+            row.find('.cost').val('');
+            row.find('.description').val('');
+            row.removeAttr('data-po-item-id');
+            removeRowIfEmpty(row);
+        } else {
+            mergeSelectionIntoRow(row, data);
+        }
+
         calculateTotals();
     });
 }

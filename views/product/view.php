@@ -505,7 +505,7 @@ function isSerialUnique(serialValue, excludeElement = null) {
 }
 
 // Validate serial input
-function validateSerial(input) {
+function validateSerial(input, focusOnError = false) {
     const serialValue = $(input).val().trim();
     const container = $(input).closest('.serial-item');
     
@@ -524,9 +524,11 @@ function validateSerial(input) {
             container.find('.serial-error').html(errorMsg);
         }
         $(input).addClass('is-invalid');
-        // Select the text for easy correction
-        input.select();
-        input.focus();
+        if (focusOnError) {
+          // Select the text for easy correction only when explicitly requested (e.g. on submit)
+          input.select();
+          input.focus();
+        }
         return false;
     } else {
         container.find('.serial-error').remove();
@@ -534,6 +536,53 @@ function validateSerial(input) {
         return true;
     }
 }
+
+    function hasInvalidSerials(focusOnFirstInvalid = false) {
+      let hasInvalid = false;
+      let firstInvalidInput = null;
+
+      $('#items-table .serial-input').each(function() {
+        const serialValue = $(this).val().trim();
+        if (!serialValue) {
+          return;
+        }
+
+        const isValid = validateSerial(this, false);
+        if (!isValid) {
+          hasInvalid = true;
+          if (!firstInvalidInput) {
+            firstInvalidInput = this;
+          }
+        }
+      });
+
+      if (hasInvalid && focusOnFirstInvalid && firstInvalidInput) {
+        firstInvalidInput.select();
+        firstInvalidInput.focus();
+      }
+
+      return hasInvalid;
+    }
+
+    function updatePurchaseOrderSubmitState() {
+      const hasInvalid = hasInvalidSerials(false);
+      $('#purchase-order-form').find(':submit').prop('disabled', hasInvalid);
+      return hasInvalid;
+    }
+
+    function blockSubmitIfInvalidSerial(e) {
+      const hasInvalidSerial = hasInvalidSerials(true);
+      if (!hasInvalidSerial) {
+        return true;
+      }
+
+      if (e) {
+        e.preventDefault();
+        e.stopImmediatePropagation();
+      }
+      alert('Please fix duplicate serials before submitting');
+      return false;
+    }
 document.getElementById('purchase-order-form').addEventListener('keydown', function(e) {
     if (e.key === 'Enter' || e.keyCode === 13) {
         // Allow Enter only in serial-input fields for adding new ones
@@ -576,6 +625,7 @@ $(document).on('click', '.remove-serial', function() {
     $(this).closest('.serial-item').remove();
     updateQtyFromSerials(row);
     calculateTotals();
+  updatePurchaseOrderSubmitState();
 });
 
 function updateQtyFromSerials(row) {
@@ -609,6 +659,7 @@ $(document).on('input change blur', '.serial-input', function() {
     let row = $(this).closest('tr');
     updateQtyFromSerials(row);
     calculateTotals();
+  updatePurchaseOrderSubmitState();
 });
 
 $(document).on('click', '.toggle-discount-type', function() {
@@ -630,6 +681,11 @@ $(document).on('input change', '.qty, .full-price, .discount, .cost-calc', funct
 
 // Make table rows clickable to navigate to product view
 $(document).on('click', 'tbody tr', function(e) {
+  // Do not redirect when interacting with rows inside the PO form items table
+  if ($(this).closest('#purchase-order-form, #items-table').length) {
+    return;
+  }
+
     if ($(e.target).closest('input, button, .remove-serial, .serial-input, .generate-serial, .generate-serial-sku').length) {
         return;
     }
@@ -640,26 +696,17 @@ $(document).on('click', 'tbody tr', function(e) {
     }
 });
 
-// Validate all serials before form submission
+// Validate all serials before form submission (covers native submit and Yii ActiveForm beforeSubmit)
+$('#purchase-order-form').on('beforeSubmit', function(e) {
+  return blockSubmitIfInvalidSerial(e);
+});
+
 $('#purchase-order-form').on('submit', function(e) {
-    let hasInvalidSerial = false;
-    
-    $('#items-table .serial-input').each(function() {
-        const serialValue = $(this).val().trim();
-        if (serialValue && !isSerialUnique(serialValue, this)) {
-            hasInvalidSerial = true;
-            validateSerial(this);
-        }
-    });
-    
-    if (hasInvalidSerial) {
-        e.preventDefault();
-        alert('Please fix duplicate serials before submitting');
-        return false;
-    }
+  return blockSubmitIfInvalidSerial(e);
 });
 
 calculateTotals();
+updatePurchaseOrderSubmitState();
 JS;
         $this->registerJs($js);
         ?>
