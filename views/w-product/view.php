@@ -27,8 +27,19 @@ echo \app\widgets\Modal::widget([
 
 <div class="product-view">
   <div class="card variation-panel">
-    <div class="card-header variation-panel-header d-flex justify-content-between align-items-center">
-      <h5 class="mb-0">Product Variation</h5>
+    <div class="card-header variation-panel-header d-flex justify-content-between align-items-center flex-wrap gap-3">
+      <div class="d-flex align-items-center gap-3">
+        <h5 class="mb-0">Product Variation</h5>
+        <div style="min-width: 300px;">
+          <?= Html::tag('select', '', [
+            'id' => 'search-sku-select',
+            'class' => 'form-control',
+            'style' => 'width: 100%',
+            'placeholder' => 'Search by SKU or Product Name...',
+          ]) ?>
+        </div>
+      </div>
+
       <div class="d-flex gap-2">
         <?= Html::button(
             '<i class="ri-edit-line align-bottom me-1"></i> Update Product',
@@ -198,4 +209,40 @@ $css = <<<CSS
 CSS;
 
 $this->registerCss($css);
+
+$baseUrl = Yii::$app->request->baseUrl;
+
+$js = <<<JS
+  // Initialize Select2 for SKU search
+  $('#search-sku-select').select2({
+    ajax: {
+      url: '{$baseUrl}/web-product/search-by-sku',
+      dataType: 'json',
+      delay: 250,
+      data: function (params) {
+        return {
+          q: params.term
+        };
+      },
+      processResults: function (data) {
+        return {
+          results: data.results
+        };
+      }
+    },
+    minimumInputLength: 2,
+    placeholder: 'Search by SKU or Product Name...',
+    allowClear: true
+  });
+
+  // Navigate to selected product
+  $('#search-sku-select').on('change', function() {
+    var productId = $(this).val();
+    if (productId) {
+      window.location.href = '{$baseUrl}/web-product/view?id=' + productId;
+    }
+  });
+JS;
+
+$this->registerJs($js);
 ?>

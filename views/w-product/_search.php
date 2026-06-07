@@ -1,6 +1,8 @@
 <?php
 
 use yii\helpers\ArrayHelper;
+use yii\helpers\Html;
+use yii\helpers\Url;
 use yii\widgets\ActiveForm;
 
 $form = ActiveForm::begin([
@@ -58,22 +60,25 @@ $form = ActiveForm::begin([
     )
     ->label('Status') ?>
 </div>
-<div class="d-flex flex-column">
-  <label class="control-label" for="searchProductList">Search</label>
-  <div class="search-box">
-    <?= $form
-      ->field($searchModel, 'globalSearch', [
-        'template' => '{input}',
-        'options' => ['tag' => false],
-      ])
-      ->textInput([
-        'class' => 'form-control ps-5',
-        'placeholder' => 'Search Products...',
-        'id' => 'searchProductList',
-      ])
-      ->label(false) ?>
-    <i class="ri-search-line search-icon"></i>
+<div class="d-flex gap-2 align-items-flex-end">
+  <div class="d-flex flex-column">
+    <label class="control-label" for="searchProductList">Search</label>
+    <div class="search-box">
+      <?= $form
+        ->field($searchModel, 'globalSearch', [
+          'template' => '{input}',
+          'options' => ['tag' => false],
+        ])
+        ->textInput([
+          'class' => 'form-control ps-5',
+          'placeholder' => 'Search Products...',
+          'id' => 'searchProductList',
+        ])
+        ->label(false) ?>
+      <i class="ri-search-line search-icon"></i>
+    </div>
   </div>
+  
 </div>
 
 <?php ActiveForm::end(); ?>

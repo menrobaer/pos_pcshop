@@ -12,7 +12,7 @@ use Yii;
  * @property string|null $name
  * @property int|null $category_id
  * @property int|null $brand_id
- * @property int|null $sort
+ * @property int|null $model_id
  */
 class NavigationItemData extends \yii\db\ActiveRecord
 {
@@ -40,7 +40,7 @@ class NavigationItemData extends \yii\db\ActiveRecord
     public function rules()
     {
         return [
-            [['nav_item_id', 'category_id', 'brand_id'], 'integer'],
+            [['nav_item_id', 'category_id', 'brand_id', 'model_id'], 'integer'],
 
         ];
     }
@@ -55,6 +55,7 @@ class NavigationItemData extends \yii\db\ActiveRecord
             'nav_item_id' => 'Nav Item ID',
             'category_id' => 'Category ID',
             'brand_id' => 'Brand ID',
+            'model_id' => 'Model ID',
         ];
     }
 }

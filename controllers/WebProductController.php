@@ -164,9 +164,27 @@ class WebProductController extends Controller
   public function actionIndex()
   {
     $searchModel = new ProductSearch();
-    if (empty($this->request->queryParams)) {
-      $searchModel->status = Product::STATUS_ACTIVE;
+    $session = Yii::$app->session;
+    $sessionKey = 'webProductSearch';
+
+    // Check if user wants to clear search
+    if ($this->request->get('clear')) {
+      $session->remove($sessionKey);
+      return $this->redirect(['index']);
     }
+
+    if (empty($this->request->queryParams)) {
+      // If no query params, try to load from session
+      if ($session->has($sessionKey)) {
+        $this->request->setQueryParams($session->get($sessionKey));
+      } else {
+        $searchModel->status = Product::STATUS_ACTIVE;
+      }
+    } else {
+      // Save search params to session
+      $session->set($sessionKey, $this->request->queryParams);
+    }
+
     $dataProvider = $searchModel->search($this->request->queryParams);
 
     return $this->render('index', [
@@ -175,6 +193,7 @@ class WebProductController extends Controller
       'categories' => $this->getCategories(),
       'brands' => $this->getBrands(),
       'models' => $this->getModels(),
+      'hasSearchSession' => $session->has($sessionKey),
     ]);
   }
 
@@ -453,19 +472,7 @@ class WebProductController extends Controller
     if ($model->load(Yii::$app->request->post())) {
       $transaction_exception = Yii::$app->db->beginTransaction();
       try {
-        $oldImage = $model->image;
-        if ($oldImage && file_exists($oldImage)) {
-          unlink($oldImage);
-        }
-
-        $model->imageFile = UploadedFile::getInstance($model, 'imageFile');
-        if ($model->imageFile) {
-          if ($path = $model->uploadImage()) {
-            $model->image = $path;
-          }
-        }
-        $model->imageFile = null;
-        if (!$model->save()) {
+        if (!$model->save(false)) {
           throw new Exception('Failed to Save! Code #001');
         }
 
@@ -574,4 +581,42 @@ class WebProductController extends Controller
 
     throw new NotFoundHttpException('The requested page does not exist.');
   }
+
+  /**
+   * Search products by SKU code for select2
+   */
+  public function actionSearchBySku()
+  {
+    Yii::$app->response->format = \yii\web\Response::FORMAT_JSON;
+    $q = Yii::$app->request->get('q', '');
+    $results = [];
+
+    if (strlen($q) >= 2) {
+      $variations = ProductVariation::find()
+        ->select(['product_variation.id', 'product_variation.product_id', 'product.sku', 'product_variation.name', 'product.name as product_name'])
+        ->innerJoin('product', 'product.id = product_variation.product_id')
+        ->where(['or', 
+          ['like', 'product.sku', $q],
+          ['like', 'product.name', $q],
+          ['like', 'product_variation.name', $q],
+        ])
+        ->andWhere(['product_variation.status' => [null, 1]])
+        ->limit(20)
+        ->all();
+
+      foreach ($variations as $variation) {
+        $displayText = $variation->sku ? $variation->sku . ' - ' . $variation->product_name : $variation->product_name;
+        if ($variation->name) {
+          $displayText .= ' (' . $variation->name . ')';
+        }
+        $results[] = [
+          'id' => $variation->product_id,
+          'text' => $displayText,
+        ];
+      }
+    }
+
+    return ['results' => $results];
+  }
 }
+

@@ -168,37 +168,63 @@ class WebNavigationController extends Controller
           }
         }
 
-        $categoryData = $model->category_id;
-        if (!empty($categoryData)) {
-          $batch_data = [];
-          foreach ($categoryData as $key => $value) {
-            $batch_data[] = [
-              'id' => null,
-              'nav_item_id' => $model->id,
-              'category_id' => $value,
-              'brand_id' => null,
-            ];
+        // Parse product model data (from comma-separated string)
+        $productModelData = [];
+        if (!empty($model->product_model_id)) {
+          // Ensure it's a string
+          $productModelIdValue = $model->product_model_id;
+          if (is_array($productModelIdValue)) {
+            $productModelIdValue = implode(',', $productModelIdValue);
           }
-          $postModel = new NavigationItemData();
-          if (!$this->getWebsiteDb()->createCommand()->batchInsert(NavigationItemData::tableName(), $postModel->attributes(), $batch_data)->execute()) {
-            throw new Exception("Failed to save base data!");
+          if (is_string($productModelIdValue)) {
+            $productModelData = array_filter(explode(',', $productModelIdValue));
           }
         }
 
+        // Create one record per category (model order stored in parent)
+        $categoryData = $model->category_id;
+        if (!empty($categoryData)) {
+          foreach ($categoryData as $key => $value) {
+            $navItemData = new NavigationItemData();
+            $navItemData->nav_item_id = $model->id;
+            $navItemData->category_id = $value;
+            $navItemData->brand_id = null;
+            $navItemData->model_id = null;
+            if (!$navItemData->save()) {
+              throw new Exception("Failed to save category data!");
+            }
+          }
+        }
+
+        // Create one record per brand (model order stored in parent)
         $brandData = $model->brand_id;
         if (!empty($brandData)) {
-          $batch_data = [];
           foreach ($brandData as $key => $value) {
-            $batch_data[] = [
-              'id' => null,
-              'nav_item_id' => $model->id,
-              'category_id' => null,
-              'brand_id' => $value,
-            ];
+            $navItemData = new NavigationItemData();
+            $navItemData->nav_item_id = $model->id;
+            $navItemData->category_id = null;
+            $navItemData->brand_id = $value;
+            $navItemData->model_id = null;
+            if (!$navItemData->save()) {
+              throw new Exception("Failed to save brand data!");
+            }
           }
-          $postModel = new NavigationItemData();
-          if (!$this->getWebsiteDb()->createCommand()->batchInsert(NavigationItemData::tableName(), $postModel->attributes(), $batch_data)->execute()) {
-            throw new Exception("Failed to save base data!");
+        }
+
+        // Save model rows in selected order (for sortable persistence)
+        if (!empty($productModelData)) {
+          foreach ($productModelData as $model_id) {
+            $model_id = (int)$model_id;
+            if ($model_id > 0) {
+              $navItemData = new NavigationItemData();
+              $navItemData->nav_item_id = $model->id;
+              $navItemData->category_id = null;
+              $navItemData->brand_id = null;
+              $navItemData->model_id = $model_id;
+              if (!$navItemData->save()) {
+                throw new Exception("Failed to save model sort data!");
+              }
+            }
           }
         }
 
@@ -238,40 +264,65 @@ class WebNavigationController extends Controller
         if (!$model->save()) throw new Exception("Failed to Save! Code #001");
         NavigationItemData::deleteAll(['nav_item_id' => $model->id]);
 
+        // Parse product model data (from comma-separated string)
+        $productModelData = [];
+        if (!empty($model->product_model_id)) {
+          // Ensure it's a string
+          $productModelIdValue = $model->product_model_id;
+          if (is_array($productModelIdValue)) {
+            $productModelIdValue = implode(',', $productModelIdValue);
+          }
+          if (is_string($productModelIdValue)) {
+            $productModelData = array_filter(explode(',', $productModelIdValue));
+          }
+        }
+
+        // Create one record per category (model order stored in parent)
         $categoryData = $model->category_id;
         if (!empty($categoryData)) {
-          $batch_data = [];
           foreach ($categoryData as $key => $value) {
-            $batch_data[] = [
-              'id' => null,
-              'nav_item_id' => $model->id,
-              'category_id' => $value,
-              'brand_id' => null,
-            ];
-          }
-          $postModel = new NavigationItemData();
-          if (!$this->getWebsiteDb()->createCommand()->batchInsert(NavigationItemData::tableName(), $postModel->attributes(), $batch_data)->execute()) {
-            throw new Exception("Failed to save base data!");
+            $navItemData = new NavigationItemData();
+            $navItemData->nav_item_id = $model->id;
+            $navItemData->category_id = $value;
+            $navItemData->brand_id = null;
+            $navItemData->model_id = null;
+            if (!$navItemData->save()) {
+              throw new Exception("Failed to save category data!");
+            }
           }
         }
 
+        // Create one record per brand (model order stored in parent)
         $brandData = $model->brand_id;
         if (!empty($brandData)) {
-          $batch_data = [];
           foreach ($brandData as $key => $value) {
-            $batch_data[] = [
-              'id' => null,
-              'nav_item_id' => $model->id,
-              'category_id' => null,
-              'brand_id' => $value,
-            ];
-          }
-          $postModel = new NavigationItemData();
-          if (!$this->getWebsiteDb()->createCommand()->batchInsert(NavigationItemData::tableName(), $postModel->attributes(), $batch_data)->execute()) {
-            throw new Exception("Failed to save base data!");
+            $navItemData = new NavigationItemData();
+            $navItemData->nav_item_id = $model->id;
+            $navItemData->category_id = null;
+            $navItemData->brand_id = $value;
+            $navItemData->model_id = null;
+            if (!$navItemData->save()) {
+              throw new Exception("Failed to save brand data!");
+            }
           }
         }
 
+        // Save model rows in selected order (for sortable persistence)
+        if (!empty($productModelData)) {
+          foreach ($productModelData as $model_id) {
+            $model_id = (int)$model_id;
+            if ($model_id > 0) {
+              $navItemData = new NavigationItemData();
+              $navItemData->nav_item_id = $model->id;
+              $navItemData->category_id = null;
+              $navItemData->brand_id = null;
+              $navItemData->model_id = $model_id;
+              if (!$navItemData->save()) {
+                throw new Exception("Failed to save model sort data!");
+              }
+            }
+          }
+        }
 
         $transaction_exception->commit();
         Yii::$app->session->setFlash('success', "Item saved successfully");

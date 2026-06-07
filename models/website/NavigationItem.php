@@ -35,6 +35,7 @@ class NavigationItem extends \yii\db\ActiveRecord
     public $imageFile;
     public $category_id;
     public $brand_id;
+    public $product_model_id;
 
     public function rules()
     {
@@ -44,7 +45,7 @@ class NavigationItem extends \yii\db\ActiveRecord
             [['name', 'slug', 'color', 'background_color'], 'string', 'max' => 50],
             [['image_url'], 'string', 'max' => 255],
             [['imageFile'], 'image', 'skipOnEmpty' => true, 'extensions' => 'jpg, jpeg, gif, png, webp', 'maxSize' => 1024 * 1024 * 2],
-            [['category_id', 'brand_id'], 'safe'],
+            [['category_id', 'brand_id', 'product_model_id'], 'safe'],
         ];
     }
 

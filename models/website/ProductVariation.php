@@ -29,6 +29,8 @@ use yii\db\ActiveRecord;
 class ProductVariation extends ActiveRecord
 {
     public $imageFile;
+    public $product_name;
+    public $sku;
 
     /**
      * {@inheritdoc}

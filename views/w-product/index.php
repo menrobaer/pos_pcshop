@@ -28,18 +28,29 @@ echo \app\widgets\Modal::widget([
         <div class="row g-4">
           <div class="col-sm-auto">
             <div>
-              <?= Html::button(
-                '<i class="ri-add-line align-bottom me-1"></i> Add Product',
-                [
-                  'class' => 'btn btn-success',
-                  'data' => [
-                    'bs-toggle' => 'modal',
-                    'bs-target' => '#modal-product',
-                    'title' => 'Add New Product',
-                    'url' => Url::to(['create']),
+              <div class="d-flex gap-3 flex-wrap align-items-center">
+                <?= Html::button(
+                  '<i class="ri-add-line align-bottom me-1"></i> Add Product',
+                  [
+                    'class' => 'btn btn-success',
+                    'data' => [
+                      'bs-toggle' => 'modal',
+                      'bs-target' => '#modal-product',
+                      'title' => 'Add New Product',
+                      'url' => Url::to(['create']),
+                    ],
                   ],
-                ],
-              ) ?>
+                ) ?>
+                <?php if ($hasSearchSession ?? false): ?>
+                <div>
+                  <?= Html::a(
+                    '<i class="ri-close-line align-bottom me-1"></i> Clear Search',
+                    ['index', 'clear' => 1],
+                    ['class' => 'btn btn-outline-secondary', 'title' => 'Clear all search filters']
+                  ) ?>
+                </div>
+                <?php endif; ?>
+              </div>
             </div>
           </div>
           <div class="col-sm">
@@ -49,6 +60,7 @@ echo \app\widgets\Modal::widget([
                 'categories' => $categories,
                 'brands' => $brands,
                 'models' => $models,
+                'hasSearchSession' => $hasSearchSession ?? false,
               ]) ?>
             </div>
           </div>
