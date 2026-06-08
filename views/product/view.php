@@ -378,7 +378,17 @@ echo \app\widgets\Modal::widget([
         </div>
         <?php
         $productViewUrl = Url::to(['product/view']);
+        $existingProductSerials = \app\models\ProductVariation::find()
+          ->select('serial')
+          ->column();
+        $existingProductSerialsJson = json_encode($existingProductSerials, JSON_UNESCAPED_UNICODE);
         $js = <<<JS
+const existingDbSerials = new Set(({$existingProductSerialsJson} || []).map(function(s) {
+    return String(s || '').trim().toUpperCase();
+}).filter(function(s) {
+    return s !== '';
+}));
+
 // Generate serial in format: 3 digits + 3 uppercase letters + 1 digit + 3 uppercase letters
 function generateSerialCode() {
     const digits = '0123456789';
@@ -492,11 +502,17 @@ function calculateTotals() {
 // Check if serial already exists in form
 function isSerialUnique(serialValue, excludeElement = null) {
     let isDuplicate = false;
+  const normalizedSerial = String(serialValue || '').trim().toUpperCase();
+
+  if (normalizedSerial && existingDbSerials.has(normalizedSerial)) {
+    return false;
+  }
+
     $('#items-table .serial-input').each(function() {
         if (excludeElement && $(this).is(excludeElement)) {
             return true; // Skip current element
         }
-        if ($(this).val().trim() === serialValue.trim() && serialValue.trim() !== '') {
+    if ($(this).val().trim().toUpperCase() === normalizedSerial && normalizedSerial !== '') {
             isDuplicate = true;
             return false; // Break loop
         }
@@ -515,7 +531,11 @@ function validateSerial(input, focusOnError = false) {
     }
     
     if (!isSerialUnique(serialValue, input)) {
-        const errorMsg = '<i class="ri-alert-fill"></i> <strong>Duplicate!</strong> Serial "' + serialValue + '" is already used in this order. Please enter a different serial number.';
+      const normalizedSerial = serialValue.toUpperCase();
+      const existsInDb = existingDbSerials.has(normalizedSerial);
+      const errorMsg = existsInDb
+        ? '<i class="ri-alert-fill"></i> <strong>Duplicate in Database!</strong> Serial "' + serialValue + '" already exists in stock. Please enter a different serial number.'
+        : '<i class="ri-alert-fill"></i> <strong>Duplicate!</strong> Serial "' + serialValue + '" is already used in this order. Please enter a different serial number.';
         
         if (!container.find('.serial-error').length) {
             container.append('<small class="serial-error text-danger d-block mt-1">' + errorMsg + '</small>');

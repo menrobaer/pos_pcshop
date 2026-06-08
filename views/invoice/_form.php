@@ -320,28 +320,27 @@ function mergeSerialValues(existingSerials, newSerial) {
     return list.join(', ');
 }
 
-function getSelectionGroupKey(data) {
-    if (data.purchase_order_item_id) {
-        return 'poi:' + data.purchase_order_item_id;
+function hasSerialInAnyRow(serialValue, excludeRow) {
+    var serial = $.trim(serialValue || '');
+    if (!serial) {
+        return false;
     }
 
-    var normalizedCost = parseFloat(data.cost || 0).toFixed(2);
-    return 'fallback:' + data.id + ':' + normalizedCost;
-}
+    var found = false;
+    $('#items-table tbody tr').each(function () {
+        var row = $(this);
+        if (excludeRow && row.is(excludeRow)) {
+            return;
+        }
 
-function getRowGroupKey(row) {
-    var poItemId = row.attr('data-po-item-id');
-    if (poItemId) {
-        return 'poi:' + poItemId;
-    }
+        var rowSerials = splitSerials(row.find('.serial').val());
+        if (rowSerials.indexOf(serial) !== -1) {
+            found = true;
+            return false;
+        }
+    });
 
-    var productId = row.find('.product-select').val();
-    var cost = parseFloat(row.find('.cost').val() || 0).toFixed(2);
-    if (!productId) {
-        return null;
-    }
-
-    return 'fallback:' + productId + ':' + cost;
+    return found;
 }
 
 function removeRowIfEmpty(row) {
@@ -355,8 +354,8 @@ function removeRowIfEmpty(row) {
 }
 
 function findGroupedRow(currentRow, data) {
-    var groupKey = getSelectionGroupKey(data);
-    if (!groupKey) {
+    var productId = String(data.id || '');
+    if (!productId) {
         return $();
     }
 
@@ -366,7 +365,7 @@ function findGroupedRow(currentRow, data) {
             return false;
         }
 
-        return getRowGroupKey(row) === groupKey;
+        return String(row.find('.product-select').val() || '') === productId;
     }).first();
 }
 
@@ -380,8 +379,6 @@ function populateRowFromSelection(row, data) {
 
     if (data.purchase_order_item_id) {
         row.attr('data-po-item-id', data.purchase_order_item_id);
-    } else {
-        row.removeAttr('data-po-item-id');
     }
 }
 
@@ -422,16 +419,15 @@ function initProductSelect2(element) {
         var row = $(this).closest('tr');
 
         var groupedRow = findGroupedRow(row, data);
+        var selectedSerial = $.trim(data.serial || '');
+
+        if (selectedSerial && hasSerialInAnyRow(selectedSerial, row)) {
+            alert('Serial already added to this invoice.');
+            $(this).val(null).trigger('change');
+            return;
+        }
+
         if (groupedRow.length) {
-            var existingSerials = splitSerials(groupedRow.find('.serial').val());
-            var selectedSerial = $.trim(data.serial || '');
-
-            if (selectedSerial && existingSerials.indexOf(selectedSerial) !== -1) {
-                alert('Serial already added to this invoice item.');
-                $(this).val(null).trigger('change');
-                return;
-            }
-
             mergeSelectionIntoRow(groupedRow, data);
 
             $(this).val(null).trigger('change');
@@ -442,7 +438,6 @@ function initProductSelect2(element) {
             row.find('.full-price').val('');
             row.find('.cost').val('');
             row.find('.description').val('');
-            row.removeAttr('data-po-item-id');
             removeRowIfEmpty(row);
         } else {
             mergeSelectionIntoRow(row, data);

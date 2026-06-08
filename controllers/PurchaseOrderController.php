@@ -195,6 +195,17 @@ class PurchaseOrderController extends Controller
 
     if ($this->request->isPost) {
       if ($model->load($this->request->post())) {
+        $items = $this->request->post('PurchaseOrderItem', []);
+        $postedSerials = $this->extractSerialsFromItems($items);
+        $existingSerials = $this->findExistingVariationSerials($postedSerials);
+        if (!empty($existingSerials)) {
+          Yii::$app->session->setFlash(
+            'error',
+            'These serial(s) already exist in database: ' . implode(', ', $existingSerials),
+          );
+          return $this->redirect(Yii::$app->request->referrer ?: ['product/index']);
+        }
+
         $transaction = Yii::$app->db->beginTransaction();
         try {
           $model->paid_amount = 0;
@@ -204,7 +215,6 @@ class PurchaseOrderController extends Controller
             throw new Exception('Failed to save PurchaseOrder header.');
           }
 
-          $items = $this->request->post('PurchaseOrderItem', []);
           foreach ($items as $itemData) {
             $item = new PurchaseOrderItem();
             $item->purchase_order_id = $model->id;
@@ -232,18 +242,20 @@ class PurchaseOrderController extends Controller
 
               // Save serials to product variation
               if (!empty($item->serial)) {
-                $serials = explode(',', $item->serial);
+                $serials = $this->extractSerialList($item->serial);
                 foreach ($serials as $s) {
-                  $s = trim($s);
-                  if ($s) {
-                    $variation = new \app\models\ProductVariation();
-                    $variation->product_id = $item->product_id;
-                    $variation->cost = $item->price;
-                    $variation->serial = $s;
-                    // Ignore if serial already exists or fails to save to prevent blocking the whole PO
-                    if (!$variation->save()) {
-                      Yii::error('Failed to save product variation: ' . json_encode($variation->getErrors()));
-                    }
+                  $variation = new \app\models\ProductVariation();
+                  $variation->product_id = $item->product_id;
+                  $variation->cost = $item->price;
+                  $variation->serial = $s;
+                  if (!$variation->save()) {
+                    $errors = implode(
+                      '; ',
+                      \yii\helpers\ArrayHelper::getColumn($variation->getErrors(), 0),
+                    );
+                    throw new Exception(
+                      'Failed to save serial "' . $s . '": ' . ($errors ?: 'Unknown validation error.'),
+                    );
                   }
                 }
               }
@@ -287,17 +299,19 @@ class PurchaseOrderController extends Controller
                 );
               }
             }
-            try {
-              Yii::$app->utils::insertActivityLog([
-                'action' => 'payment',
-                'params' => [
-                  'purchase_order_id' => $model->id,
-                  'payment_id' => $payment->id,
-                  'amount' => $payment->amount,
-                ],
-              ]);
-            } catch (\Throwable $e) {
-              // Do not block request on logging failure
+            if (isset($payment)) {
+              try {
+                Yii::$app->utils::insertActivityLog([
+                  'action' => 'payment',
+                  'params' => [
+                    'purchase_order_id' => $model->id,
+                    'payment_id' => $payment->id,
+                    'amount' => $payment->amount,
+                  ],
+                ]);
+              } catch (\Throwable $e) {
+                // Do not block request on logging failure
+              }
             }
           }
 
@@ -379,6 +393,16 @@ class PurchaseOrderController extends Controller
             ['available' => -$oldItem->quantity],
             ['id' => $oldItem->product_id],
           );
+
+          // Remove old serials from variation before applying updated items
+          if (!empty($oldItem->serial)) {
+            foreach ($this->extractSerialList($oldItem->serial) as $serial) {
+              \app\models\ProductVariation::deleteAll([
+                'product_id' => $oldItem->product_id,
+                'serial' => $serial,
+              ]);
+            }
+          }
         }
         Inventory::deleteAll([
           'type' => Inventory::TYPE_PURCHASE_ORDER,
@@ -420,6 +444,25 @@ class PurchaseOrderController extends Controller
               Inventory::TYPE_PURCHASE_ORDER,
               'in',
             );
+
+            // Save serials to product variation for updated items
+            if (!empty($item->serial)) {
+              foreach ($this->extractSerialList($item->serial) as $serial) {
+                $variation = new \app\models\ProductVariation();
+                $variation->product_id = $item->product_id;
+                $variation->cost = $item->price;
+                $variation->serial = $serial;
+                if (!$variation->save()) {
+                  $errors = implode(
+                    '; ',
+                    \yii\helpers\ArrayHelper::getColumn($variation->getErrors(), 0),
+                  );
+                  throw new Exception(
+                    'Failed to save serial "' . $serial . '": ' . ($errors ?: 'Unknown validation error.'),
+                  );
+                }
+              }
+            }
           }
         }
 
@@ -476,15 +519,11 @@ class PurchaseOrderController extends Controller
 
         // Remove serials from product variation
         if (!empty($item->serial)) {
-          $serials = explode(',', $item->serial);
-          foreach ($serials as $s) {
-            $s = trim($s);
-            if ($s) {
-              \app\models\ProductVariation::deleteAll([
-                'product_id' => $item->product_id,
-                'serial' => $s,
-              ]);
-            }
+          foreach ($this->extractSerialList($item->serial) as $serial) {
+            \app\models\ProductVariation::deleteAll([
+              'product_id' => $item->product_id,
+              'serial' => $serial,
+            ]);
           }
         }
       }
@@ -588,15 +627,11 @@ class PurchaseOrderController extends Controller
 
       // Remove serials from product variation
       if (!empty($item->serial)) {
-        $serials = explode(',', $item->serial);
-        foreach ($serials as $s) {
-          $s = trim($s);
-          if ($s) {
-            \app\models\ProductVariation::deleteAll([
-              'product_id' => $item->product_id,
-              'serial' => $s,
-            ]);
-          }
+        foreach ($this->extractSerialList($item->serial) as $serial) {
+          \app\models\ProductVariation::deleteAll([
+            'product_id' => $item->product_id,
+            'serial' => $serial,
+          ]);
         }
       }
     }
@@ -810,5 +845,44 @@ class PurchaseOrderController extends Controller
       $out['results'] = $results;
     }
     return $out;
+  }
+
+  protected function extractSerialList($serialValue)
+  {
+    if (empty($serialValue)) {
+      return [];
+    }
+
+    $parts = array_map('trim', explode(',', (string) $serialValue));
+    $parts = array_filter($parts, function ($serial) {
+      return $serial !== '';
+    });
+
+    return array_values(array_unique($parts));
+  }
+
+  protected function extractSerialsFromItems(array $items)
+  {
+    $serials = [];
+    foreach ($items as $itemData) {
+      if (empty($itemData['serial'])) {
+        continue;
+      }
+      $serials = array_merge($serials, $this->extractSerialList($itemData['serial']));
+    }
+
+    return array_values(array_unique($serials));
+  }
+
+  protected function findExistingVariationSerials(array $serials)
+  {
+    if (empty($serials)) {
+      return [];
+    }
+
+    return \app\models\ProductVariation::find()
+      ->select('serial')
+      ->where(['serial' => $serials])
+      ->column();
   }
 }

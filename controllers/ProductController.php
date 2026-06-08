@@ -150,6 +150,7 @@ class ProductController extends Controller
     if ($model->load(Yii::$app->request->post())) {
       $transaction_exception = Yii::$app->db->beginTransaction();
       try {
+        $model->save(false);
         $model->imageFile = UploadedFile::getInstance($model, 'imageFile');
         if ($model->imageFile) {
           if ($path = $model->uploadImage()) {
