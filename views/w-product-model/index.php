@@ -121,7 +121,12 @@ $isBrandFiltered = !empty($searchModel->brand_id);
               return $model->brand ? $model->brand->name : '-';
             },
           ],
-          'sort',
+          [
+            'label' => 'Product(s)',
+            'value' => function ($model) {
+              return $model->totalProducts();
+            },
+          ],
           [
             'attribute' => 'status',
             'format' => 'raw',

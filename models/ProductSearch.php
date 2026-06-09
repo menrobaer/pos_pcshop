@@ -64,7 +64,7 @@ class ProductSearch extends Product
     // Subquery to find products that have inventory transactions
     $productsWithTransactions = (new \yii\db\Query())
       ->select('product_id')
-      ->from('inventory')
+      ->from(Inventory::tableName())
       ->groupBy('product_id');
 
     // Show products if:

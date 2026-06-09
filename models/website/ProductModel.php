@@ -91,6 +91,18 @@ class ProductModel extends ActiveRecord
         return $this->hasOne(ProductBrand::class, ['id' => 'brand_id']);
     }
 
+    public function totalProducts()
+    {
+        return (int) ProductVariation::find()
+            ->alias('pv')
+            ->innerJoin(Product::tableName() . ' p', 'p.id = pv.product_id')
+            ->where([
+                'p.model_id' => $this->id,
+                'p.status' => Product::STATUS_ACTIVE,
+                'pv.status' => ProductVariation::STATUS_ACTIVE,
+            ])
+            ->count();
+    }
 
     public function getImagePath()
     {
