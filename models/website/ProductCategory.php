@@ -74,23 +74,6 @@ class ProductCategory extends ActiveRecord
         ];
     }
 
-
-  public function beforeSave($insert)
-  {
-    if (parent::beforeSave($insert)) {
-      if ($this->isNewRecord) {
-        $this->created_at = date('Y-m-d H:i:s');
-        $this->created_by = Yii::$app->user->identity->id;
-      } else {
-        $this->updated_at = date('Y-m-d H:i:s');
-        $this->updated_by = Yii::$app->user->identity->id;
-      }
-      return true;
-    } else {
-      return false;
-    }
-  }
-
   public function isUsed()
   {
     return false;

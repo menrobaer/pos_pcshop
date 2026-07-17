@@ -78,6 +78,7 @@ if (empty($postedTypeIds) && empty($postedValues)) {
   </div>
   <div class="col-lg-8">
     <?= $form->field($modelVariation, 'name')->textInput(['maxlength' => true]) ?>
+    <?= $form->field($modelVariation, 'custom_url')->textInput(['maxlength' => true]) ?>
     <div class="row">
       <div class="col-lg-6">
        <?= $form->field($modelVariation, 'warranty_id')->dropDownList($warranties, [
