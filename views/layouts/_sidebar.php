@@ -168,6 +168,7 @@ $outlet = Outlet::findOne(1);
           'web-product-brand',
           'web-product-source',
           'web-product-description',
+          'web-setting',
         ]); ?>
         <li class="menu-title"><span>Website</span></li>
         <li class="nav-item">
@@ -183,6 +184,9 @@ $outlet = Outlet::findOne(1);
           </a>
           <div class="collapse menu-dropdown <?= $isSetting ? 'show' : '' ?>" id="sidebarWebsiteSettings">
             <ul class="nav nav-sm flex-column">
+              <li class="nav-item">
+                <a href="<?= Url::to(['web-setting/index']) ?>" class="nav-link <?= $controller == 'web-setting' ? 'active' : '' ?>">General</a>
+              </li>
               <li class="nav-item">
                 <a href="<?= Url::to(['web-product-category/index']) ?>" class="nav-link <?= $controller == 'web-product-category' ? 'active' : '' ?>">Product Category</a>
               </li>

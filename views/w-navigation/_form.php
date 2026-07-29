@@ -9,7 +9,7 @@ use yii\helpers\ArrayHelper;
 <div class="frm-navigation">
 
   <?php
-  $validationUrl = ['navigation/validation'];
+  $validationUrl = ['web-navigation/validation'];
   if (!$model->isNewRecord) {
     $validationUrl['id'] = $model->id;
   }

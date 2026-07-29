@@ -10,9 +10,21 @@ use yii\helpers\Url;
 
 $isDuplicate = $isDuplicate ?? false;
 $items = $items ?? $model->items;
+
+$minItemRows = 1;
+if (count($items) < $minItemRows) {
+    for ($i = count($items); $i < $minItemRows; $i++) {
+        $emptyItem = new \app\models\QuotationItem();
+        $emptyItem->quantity = 1;
+        $emptyItem->discount_type = 'fixed';
+        $emptyItem->discount = 0;
+        $items[] = $emptyItem;
+    }
+}
 ?>
 
-<div class="quotation-form">
+<div class="quotation-form quotation-sheet-shell">
+    <div class="quotation-sheet quotation-sheet-page">
 
     <?php
     $formOptions = ['id' => 'quotation-form'];
@@ -20,48 +32,79 @@ $items = $items ?? $model->items;
         $formOptions['action'] = ['quotation/create'];
     }
     $form = ActiveForm::begin($formOptions);
+
+    $submitLabel = $model->isNewRecord
+        ? ($isDuplicate
+            ? 'Duplicate Quotation'
+            : 'Create Quotation')
+        : 'Update Quotation';
     ?>
 
-    <div class="row">
-        <div class="col-md-2">
-            <?= $form->field($model, 'code')->textInput(['readonly' => true]) ?>
+    <div class="card quotation-sheet-card" id="quotation-form-sheet">
+        <div class="card-header border-bottom-dashed p-3">
+            <div class="d-flex justify-content-end align-items-center gap-2 form-action-strip">
+                <?= Html::a(
+                    '<i class="ri-arrow-left-line align-bottom me-1"></i> Back',
+                    ['index'],
+                    ['class' => 'btn btn-light btn-sm'],
+                ) ?>
+                <button type="button" class="btn btn-soft-info btn-sm" id="add-item-top"><i class="ri-add-line align-bottom me-1"></i> Add Item</button>
+                <?= Html::submitButton('<i class="ri-save-line align-bottom me-1"></i> ' . $submitLabel, [
+                    'class' => 'btn btn-primary btn-sm',
+                ]) ?>
+            </div>
         </div>
-        <div class="col-md-2">
-            <?= $form->field($model, 'date')->textInput([
-                'data-provider' => 'flatpickr',
-                'data-date-format' => 'Y-m-d',
-                'data-altFormat' => 'd M, Y',
-            ]) ?>
-        </div>
-        <div class="col-md-2">
-            <?= $form->field($model, 'due_date')->textInput([
-                'data-provider' => 'flatpickr',
-                'data-date-format' => 'Y-m-d',
-                'data-altFormat' => 'd M, Y',
-            ]) ?>
-        </div>
-        <div class="col-md-2">
-            <?= $form->field($model, 'customer_id')->dropDownList($customers, [
-                'prompt' => 'Select Customer',
-                'class' => 'form-control has-select2',
-            ]) ?>
-        </div>
-        <div class="col-md-2">
-            <?= $form->field($model, 'phone')->textInput() ?>
-        </div>
-        <div class="col-md-2">
-            <?= $form->field($model, 'address')->textInput() ?>
-        </div>
-    </div>
 
-    <div class="row mt-4">
-        <div class="col-md-12">
-            <h5>Items</h5>
-            <div class="table-responsive">
-                <table class="table table-bordered" id="items-table">
-                    <thead class="bg-light">
+        <div class="card-body p-4 border-top border-top-dashed">
+            <div class="row g-3 align-items-start quotation-headband">
+                <div class="col-md-4">
+                    <p class="fw-bold mb-2">Quote To</p>
+                    <div class="quotation-meta-grid">
+                        <?= $form->field($model, 'customer_id')->dropDownList($customers, [
+                            'prompt' => 'Select Customer',
+                            'class' => 'form-control has-select2',
+                        ]) ?>
+                        <?= $form->field($model, 'phone')->textInput() ?>
+                        <?= $form->field($model, 'address')->textInput() ?>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="text-center quotation-form-title-wrap">
+                        <h3 class="fw-bold mb-0 quotation-title">សម្រង់តម្លៃ<br>Quotation</h3>
+                    </div>
+                </div>
+                <div class="col-md-4 text-md-end">
+                    <div id="barcode-container" class="mb-3">
+                        <div><svg id="quotation-barcode"></svg></div>
+                        <div id="quotation-code"><?= Html::encode($model->code ?: 'DRAFT') ?></div>
+                    </div>
+                    <div class="quotation-meta-grid quotation-meta-grid-right">
+                        <?= $form->field($model, 'code')->textInput([
+                            'readonly' => true,
+                            'id' => 'quotation-code-input',
+                        ]) ?>
+                        <?= $form->field($model, 'date')->textInput([
+                            'data-provider' => 'flatpickr',
+                            'data-date-format' => 'Y-m-d',
+                            'data-altFormat' => 'd M, Y',
+                        ]) ?>
+                        <?= $form->field($model, 'due_date')->textInput([
+                            'data-provider' => 'flatpickr',
+                            'data-date-format' => 'Y-m-d',
+                            'data-altFormat' => 'd M, Y',
+                        ]) ?>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="card-body p-4 quotation-items-section">
+            <div class="table-responsive quotation-sheet-table-wrap">
+                <table class="table table-borderless text-center align-top mb-0 quotation-sheet-table" id="items-table">
+                    <thead>
                         <tr>
-                            <th style="width: 35%">Product</th>
+                            <th class="table-active" style="width: 35%">Product</th>
+                            <th class="table-active" style="width: 10%">SKU</th>
                             <th style="width: 10%">Serial</th>
                             <th style="width: 8%">Cost</th>
                             <th style="width: 7%">Qty</th>
@@ -74,7 +117,7 @@ $items = $items ?? $model->items;
                     <tbody>
                         <?php if (!empty($items)): ?>
                             <?php foreach ($items as $index => $item): ?>
-                                <tr data-index="<?= $index ?>">
+                                <tr data-index="<?= $index ?>" class="quotation-item-row">
                                     <td>
                                         <?= Html::textInput(
                                             "QuotationItem[$index][product_name]",
@@ -82,13 +125,7 @@ $items = $items ?? $model->items;
                                             [
                                                 'class' => 'form-control',
                                                 'placeholder' => 'Enter product name',
-                                                'required' => true,
                                             ],
-                                        ) ?>
-                                        <?= Html::hiddenInput(
-                                            "QuotationItem[$index][product_name]",
-                                            $item->product_name,
-                                            ['class' => 'product-name'],
                                         ) ?>
                                         <div class="mt-1">
                                             <?= Html::textarea(
@@ -96,12 +133,19 @@ $items = $items ?? $model->items;
                                                 $item->description,
                                                 [
                                                     'class' =>
-                                                    'form-control form-control-sm description auto-height',
-                                                    'rows' => 4,
+                                                    'form-control form-control-sm description auto-height quotation-description',
+                                                    'rows' => 8,
                                                     'placeholder' => 'Description',
                                                 ],
                                             ) ?>
                                         </div>
+                                    </td>
+                                    <td>
+                                        <?= Html::textInput(
+                                            "QuotationItem[$index][sku]",
+                                            $item->sku,
+                                            ['class' => 'form-control sku sku-input'],
+                                        ) ?>
                                     </td>
                                     <td><?= Html::textInput(
                                             "QuotationItem[$index][serial]",
@@ -120,7 +164,7 @@ $items = $items ?? $model->items;
                                         ) ?></td>
                                     <td><?= Html::textInput(
                                             "QuotationItem[$index][quantity]",
-                                            $item->quantity,
+                                            $item->quantity ?: 1,
                                             [
                                                 'class' => 'form-control qty',
                                                 'type' => 'number',
@@ -144,7 +188,7 @@ $items = $items ?? $model->items;
                                         <div class="input-group">
                                             <?= Html::textInput(
                                                 "QuotationItem[$index][discount]",
-                                                $item->discount,
+                                                $item->discount ?: 0,
                                                 [
                                                     'class' =>
                                                     'form-control discount',
@@ -165,7 +209,7 @@ $items = $items ?? $model->items;
                                             ) ?>
                                         </div>
                                     </td>
-                                    <td class="item-total fw-bold fs-6"><?= number_format(
+                                    <td class="item-total fw-bold fs-6 quotation-item-total"><?= number_format(
                                                                             $item->quantity * $item->price,
                                                                             2,
                                                                         ) ?></td>
@@ -176,11 +220,6 @@ $items = $items ?? $model->items;
                                             $item->unit,
                                             ['class' => 'unit'],
                                         ) ?>
-                                        <?= Html::hiddenInput(
-                                            "QuotationItem[$index][sku]",
-                                            $item->sku,
-                                            ['class' => 'sku'],
-                                        ) ?>
                                     </td>
                                 </tr>
                             <?php endforeach; ?>
@@ -188,7 +227,7 @@ $items = $items ?? $model->items;
                     </tbody>
                     <tfoot>
                         <tr>
-                            <td colspan="8">
+                            <td colspan="9" class="quotation-sheet-table-actions">
                                 <button type="button" class="btn btn-info btn-sm" id="add-item"><i class="ri-add-line"></i> Add Item</button>
                             </td>
                         </tr>
@@ -196,89 +235,95 @@ $items = $items ?? $model->items;
                 </table>
             </div>
         </div>
-    </div>
 
-    <div class="row mt-4">
-        <div class="col-md-6">
-            <?= $form->field($model, 'remark')->textarea(['rows' => 4]) ?>
-        </div>
-        <div class="col-md-6">
-            <div class="card p-3 bg-light">
-                <div class="d-flex justify-content-between mb-2">
-                    <span class="fw-bold fs-5 text-primary">Sub Total:</span>
-                    <span id="sub-total-display" class="fw-bold fs-5 text-primary">0.00</span>
-                </div>
+        <div class="card-body p-4 quotation-summary-row">
+            <div class="border-top border-top-dashed mt-2">
+                <table class="table table-borderless table-nowrap align-middle mb-0 ms-auto quotation-summary-table" style="width:250px">
+                    <tbody>
+                        <tr>
+                            <td>Sub Total</td>
+                            <td class="text-end" id="sub-total-display">0.00</td>
+                        </tr>
+                        <tr>
+                            <td>Discount</td>
+                            <td class="text-end text-danger" id="total-discount-display">0.00</td>
+                        </tr>
+                        <tr>
+                            <td>Delivery Fee</td>
+                            <td>
+                                <?= Html::activeTextInput($model, 'delivery_fee', [
+                                    'class' => 'form-control form-control-sm text-end cost-calc',
+                                    'type' => 'number',
+                                    'step' => '0.01',
+                                ]) ?>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>Extra Charge</td>
+                            <td>
+                                <?= Html::activeTextInput($model, 'extra_charge', [
+                                    'class' => 'form-control form-control-sm text-end cost-calc',
+                                    'type' => 'number',
+                                    'step' => '0.01',
+                                ]) ?>
+                            </td>
+                        </tr>
+                        <tr class="border-top border-top-dashed fs-15 quotation-grand-total-line">
+                            <th scope="row">Total Amount</th>
+                            <th class="text-end" id="grand-total-display">0.00</th>
+                        </tr>
+                    </tbody>
+                </table>
+
                 <?= $form
                     ->field($model, 'sub_total')
                     ->hiddenInput(['id' => 'sub-total-input'])
                     ->label(false) ?>
-
-                <div class="d-flex justify-content-between mb-2">
-                    <span class="fw-bold fs-6">Total Discount:</span>
-                    <span id="total-discount-display" class="fw-bold fs-6">0.00</span>
-                </div>
                 <?= $form
                     ->field($model, 'discount_amount')
                     ->hiddenInput(['id' => 'discount-amount-input'])
                     ->label(false) ?>
-
-                <div class="row mb-2">
-                    <div class="col-6">Delivery Fee:</div>
-                    <div class="col-6">
-                        <?= Html::activeTextInput($model, 'delivery_fee', [
-                            'class' =>
-                            'form-control form-control-sm text-end cost-calc',
-                            'type' => 'number',
-                            'step' => '0.01',
-                        ]) ?>
-                    </div>
-                </div>
-
-                <div class="row mb-2">
-                    <div class="col-6">Extra Charge:</div>
-                    <div class="col-6">
-                        <?= Html::activeTextInput($model, 'extra_charge', [
-                            'class' =>
-                            'form-control form-control-sm text-end cost-calc',
-                            'type' => 'number',
-                            'step' => '0.01',
-                        ]) ?>
-                    </div>
-                </div>
-
-                <div class="d-flex justify-content-between mt-2 pt-2 border-top text-success">
-                    <span class="h4 fw-bold">Grand Total:</span>
-                    <span class="h4 fw-bold" id="grand-total-display">0.00</span>
-                </div>
                 <?= $form
                     ->field($model, 'grand_total')
                     ->hiddenInput(['id' => 'grand-total-input'])
                     ->label(false) ?>
             </div>
         </div>
-    </div>
 
-    <div class="d-flex mt-4 gap-3">
-        <?= Html::a(
-            'Cancel',
-            ['index'],
-            ['class' => 'btn btn-light px-5 rounded-pill'],
-        ) ?>
-        <?php
-        $isDuplicate = $isDuplicate ?? false;
-        $submitLabel = $model->isNewRecord
-            ? ($isDuplicate
-                ? 'Duplicate Quotation'
-                : 'Create Quotation')
-            : 'Update Quotation';
-        ?>
-        <?= Html::submitButton($submitLabel, [
-            'class' => 'btn btn-success text-uppercase rounded-pill px-5',
-        ]) ?>
+        <div class="card-body px-4 pb-4 pt-0">
+            <div class="mt-4">
+                <div class="alert alert-info mb-3">
+                    <p class="mb-2"><span class="fw-semibold">NOTES:</span></p>
+                    <?= $form->field($model, 'remark')->textarea([
+                        'rows' => 4,
+                        'class' => 'form-control quotation-remark',
+                    ])->label(false) ?>
+                </div>
+            </div>
+
+            <?php if (!empty($outlet) && !empty($outlet->terms)): ?>
+                <div class="mt-4">
+                    <h6 class="text-muted text-uppercase fw-semibold mb-2">Terms & Conditions:</h6>
+                    <p class="text-muted mb-0"><?= nl2br(Html::encode($outlet->terms)) ?></p>
+                </div>
+            <?php endif; ?>
+
+            <div class="row font-size-sm invoice-signature quotation-signature mt-4">
+                <div class="col-4 offset-1 text-center">Customer / អ្នកទិញ</div>
+                <div class="col-4 offset-2 text-center">Sales / អ្នកលក់</div>
+            </div>
+        </div>
+
+        <div class="card-footer border-top border-top-dashed p-3 d-flex justify-content-end gap-2 quotation-actions">
+            <?= Html::a('Cancel', ['index'], ['class' => 'btn btn-light btn-sm']) ?>
+            <?= Html::submitButton($submitLabel, [
+                'class' => 'btn btn-primary btn-sm',
+            ]) ?>
+        </div>
     </div>
 
     <?php ActiveForm::end(); ?>
-
+    </div>
 </div>
 
 <?php
@@ -323,8 +368,8 @@ function initProductSelect2(element) {
 function initAutoHeight() {
     $('.auto-height').on('input', function() {
         this.style.height = 'auto';
-        var minHeight = 4 * 1.5 * 14; // Approximate 4 rows (1.5 line-height * 14px font)
-        this.style.height = Math.max(this.scrollHeight, 80) + 'px'; // 80px is approx 4 rows
+        var minHeight = 8 * 1.5 * 14; // Approximate 8 rows (1.5 line-height * 14px font)
+        this.style.height = Math.max(this.scrollHeight, minHeight) + 'px';
     }).trigger('input');
 }
 
@@ -336,13 +381,14 @@ $('.product-select.select2-ajax').each(function() {
 
 $('#add-item').on('click', function() {
     var row = `
-        <tr data-index="\${itemIndex}">
+        <tr data-index="\${itemIndex}" class="quotation-item-row">
             <td>
-                <input type="text" name="QuotationItem[\${itemIndex}][product_name]" class="form-control" placeholder="Enter product name" required>
+                <input type="text" name="QuotationItem[\${itemIndex}][product_name]" class="form-control" placeholder="Enter product name">
                 <div class="mt-1">
-                    <textarea name="QuotationItem[\${itemIndex}][description]" class="form-control form-control-sm description auto-height" rows="4" placeholder="Description"></textarea>
+                    <textarea name="QuotationItem[\${itemIndex}][description]" class="form-control form-control-sm description auto-height" rows="8" placeholder="Description"></textarea>
                 </div>
             </td>
+            <td><input type="text" name="QuotationItem[\${itemIndex}][sku]" class="form-control sku sku-input"></td>
             <td><input type="text" name="QuotationItem[\${itemIndex}][serial]" class="form-control serial"></td>
             <td><input type="text" name="QuotationItem[\${itemIndex}][cost]" class="form-control cost" readonly></td>
             <td><input type="number" name="QuotationItem[\${itemIndex}][quantity]" class="form-control qty" value="1"></td>
@@ -356,11 +402,10 @@ $('#add-item').on('click', function() {
                     <input type="hidden" name="QuotationItem[\${itemIndex}][discount_type]" class="discount-type" value="fixed">
                 </div>
             </td>
-            <td class="item-total fw-bold fs-6">0.00</td>
+            <td class="item-total fw-bold fs-6 quotation-item-total">0.00</td>
             <td>
                 <button type="button" class="btn btn-danger btn-sm remove-item"><i class="ri-delete-bin-line"></i></button>
                 <input type="hidden" name="QuotationItem[\${itemIndex}][unit]" class="unit" value="unit">
-                <input type="hidden" name="QuotationItem[\${itemIndex}][sku]" class="sku">
             </td>
         </tr>
     `;
@@ -437,6 +482,34 @@ function calculateTotals() {
 
 calculateTotals();
 
+function ensureMinRows(minRows) {
+    while ($('#items-table tbody tr').length < minRows) {
+        $('#add-item').trigger('click');
+    }
+}
+
+function renderQuotationBarcode() {
+    if (typeof JsBarcode === 'undefined') {
+        return;
+    }
+
+    var codeValue = ($('#quotation-code-input').val() || '').trim();
+    var displayCode = codeValue || 'DRAFT';
+    $('#quotation-code').text(displayCode);
+
+    try {
+        JsBarcode('#quotation-barcode', displayCode, {
+            format: 'CODE128',
+            width: 1,
+            height: 20,
+            displayValue: false,
+            margin: 1
+        });
+    } catch (e) {
+        // silently ignore barcode rendering issues in form mode
+    }
+}
+
 $('#quotation-date').on('change', function() {
     var date = $(this).val();
     if (date) {
@@ -447,11 +520,8 @@ $('#quotation-date').on('change', function() {
     }
 });
 JS;
+$this->registerJsFile('https://cdn.jsdelivr.net/npm/jsbarcode@3.11.5/dist/JsBarcode.all.min.js', ['depends' => [\yii\web\JqueryAsset::class]]);
 $this->registerJs($js);
 
-if ($model->isNewRecord) {
-    $this->registerJs('
-      $("#add-item").trigger("click");
-    ');
-}
+$this->registerJs('ensureMinRows(1); renderQuotationBarcode(); $("#add-item-top").on("click", function(){ $("#add-item").trigger("click"); }); $("#quotation-code-input").on("input", renderQuotationBarcode);');
 ?>

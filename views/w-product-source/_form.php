@@ -14,6 +14,16 @@ use yii\widgets\ActiveForm;
 
   <?= $form->field($model, 'name')->textInput(['maxlength' => true]) ?>
 
+  <?= $form->field($model, 'color')->textInput([
+    'type' => 'color',
+    'value' => $model->color ?: '#ffffff',
+  ]) ?>
+
+  <?= $form->field($model, 'background_color')->textInput([
+    'type' => 'color',
+    'value' => $model->background_color ?: '#0ab39c',
+  ]) ?>
+
   <?= $form
     ->field($model, 'status', [
       'template' => '<label class="form-check-label" for="checkbox-source-status">Status</label>

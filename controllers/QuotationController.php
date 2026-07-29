@@ -139,6 +139,15 @@ class QuotationController extends Controller
 
           $items = $this->request->post('QuotationItem', []);
           foreach ($items as $itemData) {
+            if (!is_array($itemData)) {
+              continue;
+            }
+
+            $productName = trim((string) ($itemData['product_name'] ?? ''));
+            if ($productName === '') {
+              continue;
+            }
+
             $item = new QuotationItem();
             $item->quotation_id = $model->id;
             if ($item->load($itemData, '')) {
@@ -219,6 +228,15 @@ class QuotationController extends Controller
         QuotationItem::deleteAll(['quotation_id' => $model->id]);
         $items = $this->request->post('QuotationItem', []);
         foreach ($items as $itemData) {
+          if (!is_array($itemData)) {
+            continue;
+          }
+
+          $productName = trim((string) ($itemData['product_name'] ?? ''));
+          if ($productName === '') {
+            continue;
+          }
+
           $item = new QuotationItem();
           $item->quotation_id = $model->id;
           if ($item->load($itemData, '')) {
