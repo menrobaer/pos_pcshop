@@ -19,6 +19,7 @@ use yii\db\Expression;
  * @property int|null $created_by
  * @property string|null $updated_at
  * @property int|null $updated_by
+ * @property int $status
  *
  * @property Product $product
  * @property User $createdBy
@@ -61,7 +62,7 @@ class ProductVariation extends ActiveRecord
     {
         return [
             [['product_id', 'serial'], 'required'],
-            [['product_id', 'created_by', 'updated_by'], 'integer'],
+            [['product_id', 'created_by', 'updated_by', 'status'], 'integer'],
             [['created_at', 'updated_at'], 'safe'],
             [['serial'], 'string', 'max' => 50],
             [['cost'], 'number'],

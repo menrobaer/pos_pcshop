@@ -185,10 +185,8 @@ $utils = Yii::$app->utils;
                                           STR_PAD_LEFT,
                                         ) ?></th>
                         <td class="text-center">
-                          <?php
-                          $product = $item->product;
-                          if ($product && $product->image): ?>
-                            <?= Html::img($product->getImagePath(), [
+                          <?php if ($imageUrl = $item->getDisplayImageUrl()): ?>
+                            <?= Html::img($imageUrl, [
                               'style' => 'max-width: 80px; max-height: 80px; object-fit: contain;',
                               'alt' => $item->product_name,
                               'class' => 'img-thumbnail',

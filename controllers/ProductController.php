@@ -331,8 +331,7 @@ class ProductController extends Controller
       // do not block request on logging failure
     }
 
-    $variation->status = ProductVariation::STATUS_DELETED;
-    $variation->save(false);
+    $variation->delete();
 
     Yii::$app->session->setFlash('success', 'Variation deleted successfully.');
     return $this->redirect(['view', 'id' => $productId]);

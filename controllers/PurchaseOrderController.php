@@ -6,6 +6,7 @@ use app\models\ActivityLog;
 use app\models\Inventory;
 use app\models\PaymentMethod;
 use app\models\Product;
+use app\models\ProductVariation;
 use app\models\PurchaseOrderItem;
 use app\models\PurchaseOrder;
 use app\models\PurchaseOrderPayment;

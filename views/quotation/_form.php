@@ -31,6 +31,7 @@ if (count($items) < $minItemRows) {
     if ($isDuplicate) {
         $formOptions['action'] = ['quotation/create'];
     }
+    $formOptions['options'] = ['enctype' => 'multipart/form-data'];
     $form = ActiveForm::begin($formOptions);
 
     $submitLabel = $model->isNewRecord
@@ -138,6 +139,44 @@ if (count($items) < $minItemRows) {
                                                     'placeholder' => 'Description',
                                                 ],
                                             ) ?>
+                                        </div>
+                                        <div class="mt-2 quotation-item-image-field">
+                                            <div class="d-flex align-items-start gap-2">
+                                                <div class="quotation-item-image-preview-wrap">
+                                                    <?php $itemImageUrl = $item->getImageUrl(); ?>
+                                                    <?= Html::img(
+                                                        $itemImageUrl ?: Yii::getAlias('@web/images/upload_image_dummy.jpeg'),
+                                                        [
+                                                            'class' => 'quotation-item-image-preview img-thumbnail',
+                                                            'alt' => 'Item image preview',
+                                                            'data-placeholder' => Yii::getAlias('@web/images/upload_image_dummy.jpeg'),
+                                                            'data-current-src' => $itemImageUrl ?: Yii::getAlias('@web/images/upload_image_dummy.jpeg'),
+                                                        ],
+                                                    ) ?>
+                                                </div>
+                                                <div class="flex-grow-1 text-start">
+                                                    <?= Html::hiddenInput(
+                                                        "QuotationItem[$index][image_path]",
+                                                        $item->image_path,
+                                                        ['class' => 'existing-image-path'],
+                                                    ) ?>
+                                                    <?= Html::hiddenInput(
+                                                        "QuotationItem[$index][remove_image]",
+                                                        '0',
+                                                        ['class' => 'remove-image-flag'],
+                                                    ) ?>
+                                                    <?= Html::fileInput(
+                                                        "QuotationItemUpload[$index]",
+                                                        null,
+                                                        [
+                                                            'class' => 'form-control form-control-sm quotation-item-image-input',
+                                                            'accept' => 'image/*',
+                                                        ],
+                                                    ) ?>
+                                                    <button type="button" class="btn btn-outline-danger btn-sm mt-2 remove-item-image"<?= $item->image_path ? '' : ' style="display:none"' ?>>Remove Image</button>
+                                                    <div class="form-text">One image per item.</div>
+                                                </div>
+                                            </div>
                                         </div>
                                     </td>
                                     <td>
@@ -328,8 +367,10 @@ if (count($items) < $minItemRows) {
 
 <?php
 $productSearchUrl = Url::to(['quotation/product-search']);
+$itemPlaceholderImage = Yii::getAlias('@web/images/upload_image_dummy.jpeg');
 $js = <<<JS
 var itemIndex = $('#items-table tbody tr').length;
+var quotationItemPlaceholderImage = '{$itemPlaceholderImage}';
 
 function initProductSelect2(element) {
     element.select2({
@@ -387,6 +428,20 @@ $('#add-item').on('click', function() {
                 <div class="mt-1">
                     <textarea name="QuotationItem[\${itemIndex}][description]" class="form-control form-control-sm description auto-height" rows="8" placeholder="Description"></textarea>
                 </div>
+                <div class="mt-2 quotation-item-image-field">
+                    <div class="d-flex align-items-start gap-2">
+                        <div class="quotation-item-image-preview-wrap">
+                            <img src="\${quotationItemPlaceholderImage}" class="quotation-item-image-preview img-thumbnail" alt="Item image preview" data-placeholder="\${quotationItemPlaceholderImage}" data-current-src="\${quotationItemPlaceholderImage}">
+                        </div>
+                        <div class="flex-grow-1 text-start">
+                            <input type="hidden" name="QuotationItem[\${itemIndex}][image_path]" class="existing-image-path" value="">
+                            <input type="hidden" name="QuotationItem[\${itemIndex}][remove_image]" class="remove-image-flag" value="0">
+                            <input type="file" name="QuotationItemUpload[\${itemIndex}]" class="form-control form-control-sm quotation-item-image-input" accept="image/*">
+                            <button type="button" class="btn btn-outline-danger btn-sm mt-2 remove-item-image" style="display:none">Remove Image</button>
+                            <div class="form-text">One image per item.</div>
+                        </div>
+                    </div>
+                </div>
             </td>
             <td><input type="text" name="QuotationItem[\${itemIndex}][sku]" class="form-control sku sku-input"></td>
             <td><input type="text" name="QuotationItem[\${itemIndex}][serial]" class="form-control serial"></td>
@@ -414,6 +469,44 @@ $('#add-item').on('click', function() {
     initProductSelect2(\$row.find('.product-select'));
     initAutoHeight();
     itemIndex++;
+});
+
+$(document).on('change', '.quotation-item-image-input', function() {
+    var input = this;
+    var field = $(input).closest('.quotation-item-image-field');
+    var preview = field.find('.quotation-item-image-preview');
+    var existingImagePath = field.find('.existing-image-path');
+    var removeFlag = field.find('.remove-image-flag');
+    var removeButton = field.find('.remove-item-image');
+    var placeholder = preview.data('placeholder') || quotationItemPlaceholderImage;
+    var currentSrc = preview.data('current-src') || placeholder;
+
+    if (!input.files || !input.files.length) {
+        preview.attr('src', currentSrc);
+        removeButton.toggle(existingImagePath.val() !== '');
+        return;
+    }
+
+    removeFlag.val('0');
+    var objectUrl = URL.createObjectURL(input.files[0]);
+    preview.attr('src', objectUrl);
+    removeButton.show();
+    preview.one('load', function() {
+        URL.revokeObjectURL(objectUrl);
+    });
+});
+
+$(document).on('click', '.remove-item-image', function() {
+    var field = $(this).closest('.quotation-item-image-field');
+    var preview = field.find('.quotation-item-image-preview');
+    var placeholder = preview.data('placeholder') || quotationItemPlaceholderImage;
+
+    field.find('.quotation-item-image-input').val('');
+    field.find('.existing-image-path').val('');
+    field.find('.remove-image-flag').val('1');
+    preview.attr('src', placeholder);
+    preview.data('current-src', placeholder);
+    $(this).hide();
 });
 
 $(document).on('click', '.remove-item', function() {
@@ -522,6 +615,21 @@ $('#quotation-date').on('change', function() {
 JS;
 $this->registerJsFile('https://cdn.jsdelivr.net/npm/jsbarcode@3.11.5/dist/JsBarcode.all.min.js', ['depends' => [\yii\web\JqueryAsset::class]]);
 $this->registerJs($js);
+
+$css = <<<CSS
+.quotation-item-image-preview-wrap {
+    width: 72px;
+    flex: 0 0 72px;
+}
+
+.quotation-item-image-preview {
+    width: 72px;
+    height: 72px;
+    object-fit: contain;
+    background: #fff;
+}
+CSS;
+$this->registerCss($css);
 
 $this->registerJs('ensureMinRows(1); renderQuotationBarcode(); $("#add-item-top").on("click", function(){ $("#add-item").trigger("click"); }); $("#quotation-code-input").on("input", renderQuotationBarcode);');
 ?>

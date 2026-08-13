@@ -15,6 +15,7 @@ use Exception;
 use Yii;
 use yii\web\Controller;
 use yii\web\NotFoundHttpException;
+use yii\web\UploadedFile;
 use yii\filters\VerbFilter;
 use yii\helpers\ArrayHelper;
 
@@ -137,31 +138,7 @@ class QuotationController extends Controller
             throw new Exception('Failed to save quotation header.');
           }
 
-          $items = $this->request->post('QuotationItem', []);
-          foreach ($items as $itemData) {
-            if (!is_array($itemData)) {
-              continue;
-            }
-
-            $productName = trim((string) ($itemData['product_name'] ?? ''));
-            if ($productName === '') {
-              continue;
-            }
-
-            $item = new QuotationItem();
-            $item->quotation_id = $model->id;
-            if ($item->load($itemData, '')) {
-              if (!$item->save()) {
-                $errors = implode(
-                  '<br>',
-                  \yii\helpers\ArrayHelper::getColumn($item->getErrors(), 0),
-                );
-                throw new Exception(
-                  'Failed to save quotation item: ' . $errors,
-                );
-              }
-            }
-          }
+          $this->saveQuotationItems($model->id, $this->request->post('QuotationItem', []));
 
           $transaction->commit();
           try {
@@ -226,29 +203,7 @@ class QuotationController extends Controller
         }
 
         QuotationItem::deleteAll(['quotation_id' => $model->id]);
-        $items = $this->request->post('QuotationItem', []);
-        foreach ($items as $itemData) {
-          if (!is_array($itemData)) {
-            continue;
-          }
-
-          $productName = trim((string) ($itemData['product_name'] ?? ''));
-          if ($productName === '') {
-            continue;
-          }
-
-          $item = new QuotationItem();
-          $item->quotation_id = $model->id;
-          if ($item->load($itemData, '')) {
-            if (!$item->save()) {
-              $errors = implode(
-                '<br>',
-                \yii\helpers\ArrayHelper::getColumn($item->getErrors(), 0),
-              );
-              throw new Exception('Failed to save quotation item: ' . $errors);
-            }
-          }
-        }
+        $this->saveQuotationItems($model->id, $this->request->post('QuotationItem', []));
 
         $transaction->commit();
         try {
@@ -431,6 +386,65 @@ class QuotationController extends Controller
     }
 
     throw new NotFoundHttpException('The requested page does not exist.');
+  }
+
+  private function saveQuotationItems($quotationId, array $items)
+  {
+    foreach ($items as $index => $itemData) {
+      if (!is_array($itemData)) {
+        continue;
+      }
+
+      $productName = trim((string) ($itemData['product_name'] ?? ''));
+      if ($productName === '') {
+        continue;
+      }
+
+      $item = new QuotationItem();
+      $item->quotation_id = $quotationId;
+      if (!$item->load($itemData, '')) {
+        continue;
+      }
+
+      $existingImagePath = trim((string) ($itemData['image_path'] ?? ''));
+      $removeImage = (string) ($itemData['remove_image'] ?? '0') === '1';
+      if ($existingImagePath !== '') {
+        $item->image_path = $existingImagePath;
+      }
+
+      $item->imageFile = UploadedFile::getInstanceByName("QuotationItemUpload[$index]");
+      if ($item->imageFile) {
+        $replacedImagePath = $existingImagePath !== '' ? $existingImagePath : null;
+        $uploadedPath = $item->uploadImage();
+        if ($uploadedPath === false) {
+          $errors = implode(
+            '<br>',
+            ArrayHelper::getColumn($item->getErrors(), 0),
+          );
+          throw new Exception(
+            'Failed to upload quotation item image' . ($errors ? ': ' . $errors : '.'),
+          );
+        }
+        $item->image_path = $uploadedPath;
+        if ($replacedImagePath) {
+          $item->deleteStoredImage($replacedImagePath);
+        }
+      } elseif ($removeImage) {
+        if ($existingImagePath !== '') {
+          $item->deleteStoredImage($existingImagePath);
+        }
+        $item->image_path = null;
+      }
+      $item->imageFile = null;
+
+      if (!$item->save()) {
+        $errors = implode(
+          '<br>',
+          ArrayHelper::getColumn($item->getErrors(), 0),
+        );
+        throw new Exception('Failed to save quotation item: ' . $errors);
+      }
+    }
   }
 
   protected function getCustomers()

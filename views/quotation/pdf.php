@@ -122,12 +122,9 @@ use yii\helpers\Html;
                     
                     <table style="width: 100%; border-collapse: collapse;">
                         <tr>
-                            <?php if (
-                              $item->product &&
-                              $item->product->image
-                            ): ?>
+                            <?php if ($imageUrl = $item->getDisplayImageUrl()): ?>
                             <td style="width: 50px; vertical-align: top; padding-right: 10px;">
-                                <?= Html::img($item->product->getImagePath(), [
+                                <?= Html::img($imageUrl, [
                                   'style' =>
                                     'width: 40px; height: 40px; object-fit: contain; border: 1px solid #dee2e6; padding: 2px; border-radius: 4px;',
                                 ]) ?>
