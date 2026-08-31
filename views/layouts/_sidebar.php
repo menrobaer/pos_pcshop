@@ -167,6 +167,7 @@ $outlet = Outlet::findOne(1);
           'web-product-category',
           'web-product-brand',
           'web-product-source',
+          'web-product-condition',
           'web-product-description',
           'web-setting',
         ]); ?>
@@ -198,6 +199,9 @@ $outlet = Outlet::findOne(1);
               </li>
               <li class="nav-item">
                 <a href="<?= Url::to(['web-product-source/index']) ?>" class="nav-link <?= $controller == 'web-product-source' ? 'active' : '' ?>">Product Source</a>
+              </li>
+              <li class="nav-item">
+                <a href="<?= Url::to(['web-product-condition/index']) ?>" class="nav-link <?= $controller == 'web-product-condition' ? 'active' : '' ?>">Product Condition</a>
               </li>
               <li class="nav-item">
                 <a href="<?= Url::to(['web-product-description/index']) ?>" class="nav-link <?= $controller == 'web-product-description' ? 'active' : '' ?>">Product Description</a>
