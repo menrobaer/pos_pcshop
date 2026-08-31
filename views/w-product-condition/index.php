@@ -76,7 +76,31 @@ echo \app\widgets\Modal::widget([
         ],
         'columns' => [
           ['class' => 'yii\grid\SerialColumn'],
-          'name',
+          [
+            'attribute' => 'name',
+            'format' => 'raw',
+            'value' => function ($model) {
+              $textColor = $model->color ?: '#000000';
+              $bgColor = $model->background_color ?: '#ffffff';
+              return '<span class="px-2 py-1 rounded-1 d-inline-block" style="color:' . Html::encode($textColor) . ';background:' . Html::encode($bgColor) . ';">' . Html::encode($model->name) . '</span>';
+            },
+          ],
+          [
+            'attribute' => 'color',
+            'format' => 'raw',
+            'value' => function ($model) {
+              $color = $model->color ?: '#000000';
+              return '<span class="d-inline-flex align-items-center gap-2"><span class="rounded-circle border" style="width:18px;height:18px;display:inline-block;background:' . Html::encode($color) . ';"></span>' . Html::encode($color) . '</span>';
+            },
+          ],
+          [
+            'attribute' => 'background_color',
+            'format' => 'raw',
+            'value' => function ($model) {
+              $bg = $model->background_color ?: '#ffffff';
+              return '<span class="d-inline-flex align-items-center gap-2"><span class="rounded-circle border" style="width:18px;height:18px;display:inline-block;background:' . Html::encode($bg) . ';"></span>' . Html::encode($bg) . '</span>';
+            },
+          ],
           [
             'attribute' => 'status',
             'format' => 'raw',
